@@ -78,6 +78,10 @@ export default function TabLayout() {
         name="Clipboard"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="Preview"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }
