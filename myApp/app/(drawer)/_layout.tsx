@@ -1,7 +1,7 @@
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { Text, Pressable } from 'react-native';
-import { useNavigation, usePathname, useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 
@@ -15,9 +15,6 @@ function CustomDrawerContent(props: any) {
   const isContactsActive = pathname.includes('Contacts');
   const isLocationActive = pathname.includes('Location');
   const isClipboardActive = pathname.includes('Clipboard');
-  const isPreviewActive = pathname.includes('Preview');
-  const isHistoryActive = pathname.includes('History');
-  const isProfileActive = pathname.includes('Profile');
   const isSettingsActive = pathname.includes('Settings');
 
   return (
@@ -28,7 +25,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>🏠</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Dashboard')}
+        onPress={() => router.push('/(drawer)/(tabs)/Dashboard')}
       />
       <DrawerItem
         label="Survey"
@@ -36,7 +33,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📋</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Survey')}
+        onPress={() => router.push('/(drawer)/(tabs)/Survey')}
       />
       <DrawerItem
         label="Camera"
@@ -44,15 +41,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📷</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Camera')}
-      />
-      <DrawerItem
-        label="Location"
-        focused={isLocationActive}
-        activeTintColor="#f97316"
-        inactiveTintColor="#9ca3af"
-        icon={() => <Text style={{ fontSize: 20 }}>📍</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Location')}
+        onPress={() => router.push('/(drawer)/(tabs)/Camera')}
       />
       <DrawerItem
         label="Contacts"
@@ -60,7 +49,15 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>👥</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Contacts')}
+        onPress={() => router.push('/(drawer)/(tabs)/Contacts')}
+      />
+      <DrawerItem
+        label="Location"
+        focused={isLocationActive}
+        activeTintColor="#f97316"
+        inactiveTintColor="#9ca3af"
+        icon={() => <Text style={{ fontSize: 20 }}>📍</Text>}
+        onPress={() => router.push('/(drawer)/(tabs)/Location')}
       />
       <DrawerItem
         label="Clipboard"
@@ -68,23 +65,15 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📋</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Clipboard' as any)}
+        onPress={() => router.push('/(drawer)/(tabs)/Clipboard')}
       />
       <DrawerItem
-        label="Preview"
-        focused={isPreviewActive}
+        label="Settings"
+        focused={isSettingsActive}
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
-        icon={() => <Text style={{ fontSize: 20 }}>👁️</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Preview' as any)}
-      />
-      <DrawerItem
-        label="History"
-        focused={isHistoryActive}
-        activeTintColor="#f97316"
-        inactiveTintColor="#9ca3af"
-        icon={() => <Text style={{ fontSize: 20 }}>📂</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/History' as any)}
+        icon={() => <Text style={{ fontSize: 20 }}>⚙️</Text>}
+        onPress={() => router.push('/(drawer)/(tabs)/Settings')}
       />
     </DrawerContentScrollView>
   );

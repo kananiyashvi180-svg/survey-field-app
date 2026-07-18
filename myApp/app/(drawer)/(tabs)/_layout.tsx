@@ -22,6 +22,7 @@ export default function TabLayout() {
         },
       }}
     >
+      {/* ── Visible Bottom Tabs ── */}
       <Tabs.Screen
         name="Dashboard"
         options={{
@@ -31,47 +32,49 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="Survey"
         options={{
-          title: 'Home',
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⊞</Text>,
+          title: 'New Survey',
+          tabBarLabel: 'New Survey',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📋</Text>,
         }}
+      />
+      <Tabs.Screen
+        name="History"
+        options={{
+          title: 'History',
+          tabBarLabel: 'History',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📂</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="Profile"
+        options={{
+          title: 'Profile',
+          tabBarLabel: 'Profile',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>👤</Text>,
+        }}
+      />
+
+      {/* ── Hidden Tab Screens (navigated via Drawer or router) ── */}
+      <Tabs.Screen
+        name="index"
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="explore"
-        options={{
-          title: 'Explore',
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔍</Text>,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="Camera"
-        options={{
-          title: 'Camera',
-          tabBarLabel: 'Camera',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📷</Text>,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="Location"
-        options={{
-          title: 'Location',
-          tabBarLabel: 'Location',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📍</Text>,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="Contacts"
-        options={{
-          title: 'Contacts',
-          tabBarLabel: 'Contacts',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>👥</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="Survey"
         options={{ href: null }}
       />
       <Tabs.Screen
@@ -83,7 +86,7 @@ export default function TabLayout() {
         options={{ href: null }}
       />
       <Tabs.Screen
-        name="History"
+        name="Settings"
         options={{ href: null }}
       />
     </Tabs>
