@@ -46,6 +46,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔍</Text>,
         }}
       />
+      <Tabs.Screen
+        name="Survey"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
