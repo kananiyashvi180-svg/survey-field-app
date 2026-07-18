@@ -28,7 +28,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>🏠</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Dashboard')}
+        onPress={() => router.navigate('/Dashboard')}
       />
       <DrawerItem
         label="Survey"
@@ -36,7 +36,15 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📋</Text>}
-        onPress={() => router.navigate('/(drawer)/(tabs)/Survey')}
+        onPress={() => router.navigate('/Survey')}
+      />
+      <DrawerItem
+        label="Camera"
+        focused={isCameraActive}
+        activeTintColor="#f97316"
+        inactiveTintColor="#9ca3af"
+        icon={() => <Text style={{ fontSize: 20 }}>📷</Text>}
+        onPress={() => router.navigate('/Camera')}
       />
     </DrawerContentScrollView>
   );

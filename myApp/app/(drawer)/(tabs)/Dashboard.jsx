@@ -38,7 +38,7 @@ export default function Dashboard() {
       subtitle: 'Fill survey details',
       icon: '📋',
       iconBg: '#1e3a5f',
-      route: '/(drawer)/(tabs)/Survey',
+      route: '/Survey',
     },
     {
       id: 'camera',
@@ -46,7 +46,7 @@ export default function Dashboard() {
       subtitle: 'Capture site photos',
       icon: '📷',
       iconBg: '#1a3d2b',
-      route: '/(drawer)/Camera',
+      route: '/Camera',
     },
     {
       id: 'location',
@@ -54,7 +54,7 @@ export default function Dashboard() {
       subtitle: 'Pinpoint locations',
       icon: '📍',
       iconBg: '#3d2a10',
-      route: '/(drawer)/Location',
+      route: '/Location',
     },
     {
       id: 'contacts',
@@ -62,7 +62,7 @@ export default function Dashboard() {
       subtitle: 'Link client contacts',
       icon: '👥',
       iconBg: '#2e1a4a',
-      route: '/(drawer)/Contacts',
+      route: '/Contacts',
     },
     {
       id: 'clipboard',
@@ -70,7 +70,7 @@ export default function Dashboard() {
       subtitle: 'Copy & paste notes',
       icon: '📝',
       iconBg: '#1a3d3d',
-      route: '/(drawer)/Clipboard',
+      route: '/Clipboard',
     },
     {
       id: 'preview',
@@ -78,7 +78,7 @@ export default function Dashboard() {
       subtitle: 'View field report',
       icon: '👁️',
       iconBg: '#3d1a1a',
-      route: '/(drawer)/Preview',
+      route: '/Preview',
     },
   ];
 

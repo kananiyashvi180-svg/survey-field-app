@@ -47,6 +47,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="Camera"
+        options={{
+          title: 'Camera',
+          tabBarLabel: 'Camera',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📷</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="Survey"
         options={{
           href: null,

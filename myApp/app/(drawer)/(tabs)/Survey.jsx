@@ -75,7 +75,7 @@ export default function SurveyScreen() {
       setErrors({});
       
       // Navigate back to Dashboard
-      router.navigate('/(drawer)/(tabs)/Dashboard');
+      router.navigate('/Dashboard');
     }
   };
 
@@ -184,7 +184,7 @@ export default function SurveyScreen() {
 
         {/* Action Buttons */}
         <View style={styles.buttonRow}>
-          <Pressable style={styles.cancelButton} onPress={() => router.navigate('/(drawer)/(tabs)/Dashboard')}>
+          <Pressable style={styles.cancelButton} onPress={() => router.navigate('/Dashboard')}>
             <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
           </Pressable>
           <Pressable style={styles.submitButton} onPress={handleSubmit}>
