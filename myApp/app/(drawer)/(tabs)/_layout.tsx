@@ -57,7 +57,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Location"
         options={{
-          href: null,
+          title: 'Location',
+          tabBarLabel: 'Location',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📍</Text>,
         }}
       />
       <Tabs.Screen

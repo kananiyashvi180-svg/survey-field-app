@@ -46,6 +46,14 @@ function CustomDrawerContent(props: any) {
         icon={() => <Text style={{ fontSize: 20 }}>📷</Text>}
         onPress={() => router.navigate('/Camera')}
       />
+      <DrawerItem
+        label="Location"
+        focused={isLocationActive}
+        activeTintColor="#f97316"
+        inactiveTintColor="#9ca3af"
+        icon={() => <Text style={{ fontSize: 20 }}>📍</Text>}
+        onPress={() => router.navigate('/Location')}
+      />
     </DrawerContentScrollView>
   );
 }
