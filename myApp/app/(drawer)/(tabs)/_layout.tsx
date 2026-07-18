@@ -55,6 +55,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="Location"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="Survey"
         options={{
           href: null,
