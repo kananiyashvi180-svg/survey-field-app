@@ -28,7 +28,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>🏠</Text>}
-        onPress={() => router.navigate('/Dashboard')}
+        onPress={() => router.navigate('/(drawer)/(tabs)/Dashboard')}
       />
       <DrawerItem
         label="Survey"
@@ -36,7 +36,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📋</Text>}
-        onPress={() => router.navigate('/Survey')}
+        onPress={() => router.navigate('/(drawer)/(tabs)/Survey')}
       />
       <DrawerItem
         label="Camera"
@@ -44,7 +44,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📷</Text>}
-        onPress={() => router.navigate('/Camera')}
+        onPress={() => router.navigate('/(drawer)/(tabs)/Camera')}
       />
       <DrawerItem
         label="Location"
@@ -52,7 +52,15 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📍</Text>}
-        onPress={() => router.navigate('/Location')}
+        onPress={() => router.navigate('/(drawer)/(tabs)/Location')}
+      />
+      <DrawerItem
+        label="Contacts"
+        focused={isContactsActive}
+        activeTintColor="#f97316"
+        inactiveTintColor="#9ca3af"
+        icon={() => <Text style={{ fontSize: 20 }}>👥</Text>}
+        onPress={() => router.navigate('/(drawer)/(tabs)/Contacts')}
       />
     </DrawerContentScrollView>
   );

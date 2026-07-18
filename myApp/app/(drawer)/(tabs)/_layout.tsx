@@ -63,6 +63,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="Contacts"
+        options={{
+          title: 'Contacts',
+          tabBarLabel: 'Contacts',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>👥</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="Survey"
         options={{
           href: null,
