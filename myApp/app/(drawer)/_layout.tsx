@@ -78,6 +78,14 @@ function CustomDrawerContent(props: any) {
         icon={() => <Text style={{ fontSize: 20 }}>👁️</Text>}
         onPress={() => router.navigate('/(drawer)/(tabs)/Preview' as any)}
       />
+      <DrawerItem
+        label="History"
+        focused={isHistoryActive}
+        activeTintColor="#f97316"
+        inactiveTintColor="#9ca3af"
+        icon={() => <Text style={{ fontSize: 20 }}>📂</Text>}
+        onPress={() => router.navigate('/(drawer)/(tabs)/History' as any)}
+      />
     </DrawerContentScrollView>
   );
 }

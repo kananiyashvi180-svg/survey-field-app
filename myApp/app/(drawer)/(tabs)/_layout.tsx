@@ -82,6 +82,10 @@ export default function TabLayout() {
         name="Preview"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="History"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }
