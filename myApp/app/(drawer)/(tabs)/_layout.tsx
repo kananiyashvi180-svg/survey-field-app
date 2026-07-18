@@ -72,9 +72,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="Survey"
-        options={{
-          href: null,
-        }}
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="Clipboard"
+        options={{ href: null }}
       />
     </Tabs>
   );
