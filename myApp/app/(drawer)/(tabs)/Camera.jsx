@@ -1,165 +1,305 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, Pressable, Image, ActivityIndicator, Alert, Dimensions, Platform } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Image,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import * as MediaLibrary from 'expo-media-library';
 
 export default function CameraScreen() {
-  const router = useRouter();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [photo, setPhoto] = useState(null);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
+
+  const [photo, setPhoto] = useState(null);          // captured/selected photo
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [facing, setFacing] = useState('back');       // 'back' | 'front'
+
   const cameraRef = useRef(null);
 
-  // Handle initial permission check loading state
-  useEffect(() => {
-    if (permission) {
-      setIsLoading(false);
-    }
-  }, [permission]);
-
-  // Helper to format date
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   const formatTimestamp = (date) => {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const hh = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    const sec = String(date.getSeconds()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${sec}`;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+           `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   };
 
+  // ── Actions ──────────────────────────────────────────────────────────────────
   const handleCapture = async () => {
-    if (!cameraRef.current || !isCameraReady) return;
-
+    if (!cameraRef.current || !isCameraReady || isCapturing) return;
+    setIsCapturing(true);
     try {
-      setIsLoading(true);
-      const options = {
-        quality: 0.85,
-        skipProcessing: Platform.OS === 'web', // Skip processing on web to avoid issues
-      };
-      
-      const takenPhoto = await cameraRef.current.takePictureAsync(options);
-      if (takenPhoto) {
-        setPhoto({
-          uri: takenPhoto.uri,
-          timestamp: formatTimestamp(new Date()),
-        });
+      const taken = await cameraRef.current.takePictureAsync({ quality: 0.85 });
+      if (taken) {
+        setPhoto({ uri: taken.uri, timestamp: formatTimestamp(new Date()), fromGallery: false });
       }
-    } catch (error) {
-      console.error('Error capturing photo:', error);
-      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+    } catch (e) {
+      Alert.alert('Capture Error', 'Failed to take photo. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsCapturing(false);
     }
   };
+
+  const handleFlip = () => {
+    setFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+  };
+
+  const handleRetake = () => setPhoto(null);
 
   const handleDelete = () => {
     Alert.alert(
       'Delete Photo',
-      'Are you sure you want to delete this photo?',
+      'Are you sure you want to discard this photo?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => setPhoto(null),
-        },
+        { text: 'Delete', style: 'destructive', onPress: () => setPhoto(null) },
       ],
       { cancelable: true }
     );
   };
 
-  const handleRetake = () => {
-    setPhoto(null);
+  const handleSaveToGallery = async () => {
+    if (!photo) return;
+
+    // Ensure media permission
+    if (!mediaPermission?.granted) {
+      const response = await requestMediaPermission();
+      if (!response.granted) {
+        Alert.alert('Permission Denied', 'Please allow access to your media library to save photos.');
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      await MediaLibrary.saveToLibraryAsync(photo.uri);
+      Alert.alert(
+        '✅ Saved to Gallery',
+        'The photo has been successfully saved to your device gallery.',
+        [{ text: 'OK' }]
+      );
+    } catch (e) {
+      Alert.alert('Save Failed', 'Could not save the photo. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // If permission is still checking
-  if (isLoading && !permission) {
+  const handleSelectFromGallery = async () => {
+    // Ensure media permission
+    if (!mediaPermission?.granted) {
+      const response = await requestMediaPermission();
+      if (!response.granted) {
+        Alert.alert('Permission Denied', 'Please allow access to your media library to select photos.');
+        return;
+      }
+    }
+
+    try {
+      // Get the most recent photo from the gallery
+      const assets = await MediaLibrary.getAssetsAsync({
+        mediaType: MediaLibrary.MediaType.photo,
+        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+        first: 1,
+      });
+
+      if (assets.assets.length === 0) {
+        Alert.alert('No Photos', 'No photos found in your gallery.');
+        return;
+      }
+
+      // Get full asset info with localUri
+      const assetInfo = await MediaLibrary.getAssetInfoAsync(assets.assets[0]);
+      const uri = assetInfo.localUri || assetInfo.uri;
+
+      setPhoto({ uri, timestamp: formatTimestamp(new Date()), fromGallery: true });
+    } catch (e) {
+      Alert.alert('Gallery Error', 'Could not load photos from gallery.');
+    }
+  };
+
+  // ── Permission: Camera not yet resolved ──────────────────────────────────────
+  if (!cameraPermission) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#f97316" />
-        <Text style={styles.loadingText}>Loading Camera permissions...</Text>
+        <Text style={styles.loadingText}>Checking permissions…</Text>
       </View>
     );
   }
 
-  // If permission has not been granted
-  if (!permission || !permission.granted) {
+  // ── Permission: Camera denied ────────────────────────────────────────────────
+  if (!cameraPermission.granted) {
     return (
-      <View style={styles.container}>
-        <View style={styles.card}>
+      <View style={styles.centeredContainer}>
+        <View style={styles.permCard}>
+          <Text style={styles.permEmoji}>📷</Text>
           <Text style={styles.title}>Camera Access Required</Text>
           <Text style={styles.subtitle}>
-            We need camera access to allow you to capture field photos for survey reports.
+            We need camera access to capture field photos for your survey reports.
           </Text>
-          <Pressable style={styles.button} onPress={requestPermission}>
-            <Text style={styles.buttonText}>Grant Permission</Text>
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
+            onPress={requestCameraPermission}
+          >
+            <Text style={styles.primaryBtnText}>Grant Camera Access</Text>
           </Pressable>
         </View>
       </View>
     );
   }
 
-  // If a photo has been captured, show visual preview
+  // ── Photo Preview ────────────────────────────────────────────────────────────
   if (photo) {
     return (
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.bgDark}
+        contentContainerStyle={styles.previewScroll}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.previewCard}>
-          <Text style={styles.previewTitle}>Photo Preview</Text>
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: photo.uri }} style={styles.previewImage} resizeMode="cover" />
-            <View style={styles.timestampBadge}>
-              <Text style={styles.timestampText}>🕒 Captured: {photo.timestamp}</Text>
+          {/* Header */}
+          <View style={styles.previewHeader}>
+            <Text style={styles.previewTitle}>
+              {photo.fromGallery ? '🖼️  Gallery Photo' : '📷  Photo Preview'}
+            </Text>
+            <View style={styles.badgeRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>🕒 {photo.timestamp}</Text>
+              </View>
+              {photo.fromGallery && (
+                <View style={[styles.badge, styles.galleryBadge]}>
+                  <Text style={styles.badgeText}>From Gallery</Text>
+                </View>
+              )}
             </View>
           </View>
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.retakeButton} onPress={handleRetake}>
-              <Text style={styles.retakeButtonText}>🔄 Retake</Text>
+
+          {/* Image */}
+          <View style={styles.imageWrapper}>
+            <Image source={{ uri: photo.uri }} style={styles.previewImage} resizeMode="cover" />
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionGrid}>
+            {/* Row 1 – Retake & Delete */}
+            <View style={styles.btnRow}>
+              <Pressable
+                style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed]}
+                onPress={handleRetake}
+              >
+                <Text style={styles.secondaryBtnText}>🔄  Retake</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.dangerBtn, pressed && styles.dangerBtnPressed]}
+                onPress={handleDelete}
+              >
+                <Text style={styles.dangerBtnText}>🗑️  Delete</Text>
+              </Pressable>
+            </View>
+
+            {/* Row 2 – Select from Gallery */}
+            <Pressable
+              style={({ pressed }) => [styles.outlineBtn, pressed && styles.outlineBtnPressed]}
+              onPress={handleSelectFromGallery}
+            >
+              <Text style={styles.outlineBtnText}>🖼️  Select from Gallery</Text>
             </Pressable>
-            <Pressable style={styles.deleteButton} onPress={handleDelete}>
-              <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+
+            {/* Row 3 – Save to Gallery */}
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
+              onPress={handleSaveToGallery}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.primaryBtnText}>💾  Save to Gallery</Text>
+              )}
             </Pressable>
           </View>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
-  // Active Camera View
+  // ── Active Camera View ───────────────────────────────────────────────────────
   return (
     <View style={styles.cameraContainer}>
+      {/* Camera Loading Overlay */}
       {!isCameraReady && (
         <View style={styles.cameraLoadingOverlay}>
           <ActivityIndicator size="large" color="#f97316" />
-          <Text style={styles.loadingText}>Opening Camera...</Text>
+          <Text style={styles.loadingText}>Opening Camera…</Text>
         </View>
       )}
+
       <CameraView
         style={StyleSheet.absoluteFillObject}
         ref={cameraRef}
+        facing={facing}
         onCameraReady={() => setIsCameraReady(true)}
       >
         <View style={styles.cameraOverlay}>
-          <View style={styles.cameraHeader}>
-            <Text style={styles.cameraHeaderText}>Capture Site Photo</Text>
+          {/* Top Bar */}
+          <View style={styles.cameraTopBar}>
+            <Text style={styles.cameraTitle}>Capture Site Photo</Text>
           </View>
 
-          <View style={styles.cameraFooter}>
-            <View style={styles.captureContainer}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.captureButtonOuter,
-                  pressed && styles.captureButtonOuterPressed,
-                ]}
-                onPress={handleCapture}
-                disabled={!isCameraReady}
-              >
-                <View style={styles.captureButtonInner} />
-              </Pressable>
-            </View>
+          {/* Viewfinder Corner Brackets */}
+          <View style={styles.viewfinderWrapper} pointerEvents="none">
+            <View style={[styles.corner, styles.cornerTL]} />
+            <View style={[styles.corner, styles.cornerTR]} />
+            <View style={[styles.corner, styles.cornerBL]} />
+            <View style={[styles.corner, styles.cornerBR]} />
+          </View>
+
+          {/* Bottom Controls */}
+          <View style={styles.cameraBottomBar}>
+            {/* Select from Gallery (left) */}
+            <Pressable
+              style={({ pressed }) => [styles.sideBtn, pressed && styles.sideBtnPressed]}
+              onPress={handleSelectFromGallery}
+            >
+              <Text style={styles.sideBtnEmoji}>🖼️</Text>
+              <Text style={styles.sideBtnLabel}>Gallery</Text>
+            </Pressable>
+
+            {/* Shutter (center) */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.shutterOuter,
+                pressed && styles.shutterOuterPressed,
+                !isCameraReady && styles.shutterDisabled,
+              ]}
+              onPress={handleCapture}
+              disabled={!isCameraReady || isCapturing}
+            >
+              {isCapturing ? (
+                <ActivityIndicator size="small" color="#f97316" />
+              ) : (
+                <View style={styles.shutterInner} />
+              )}
+            </Pressable>
+
+            {/* Flip (right) */}
+            <Pressable
+              style={({ pressed }) => [styles.sideBtn, pressed && styles.sideBtnPressed]}
+              onPress={handleFlip}
+            >
+              <Text style={styles.sideBtnEmoji}>🔄</Text>
+              <Text style={styles.sideBtnLabel}>Flip</Text>
+            </Pressable>
           </View>
         </View>
       </CameraView>
@@ -167,19 +307,16 @@ export default function CameraScreen() {
   );
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f1117',
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
+  bgDark: { flex: 1, backgroundColor: '#0f1117' },
+
+  centeredContainer: {
     flex: 1,
     backgroundColor: '#0f1117',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
   },
   loadingText: {
     color: '#9ca3af',
@@ -187,132 +324,106 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontWeight: '500',
   },
-  card: {
+
+  // Permission Card
+  permCard: {
     backgroundColor: '#1c1f2b',
     borderRadius: 16,
-    padding: 24,
+    padding: 28,
     width: '100%',
-    maxWidth: 400,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#2a2d3a',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  title: {
-    color: '#f1f5f9',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#9ca3af',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  button: {
+  permEmoji: { fontSize: 48, marginBottom: 14 },
+  title: { color: '#f1f5f9', fontSize: 22, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
+  subtitle: { color: '#9ca3af', fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+
+  // Buttons
+  primaryBtn: {
     backgroundColor: '#f97316',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    width: '100%',
+    borderRadius: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    width: '100%',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  primaryBtnPressed: { opacity: 0.82 },
+  primaryBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: '#2a2d3a',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3b3f54',
   },
+  secondaryBtnPressed: { opacity: 0.82 },
+  secondaryBtnText: { color: '#f1f5f9', fontSize: 14, fontWeight: '600' },
+
+  dangerBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.4)',
+  },
+  dangerBtnPressed: { opacity: 0.82 },
+  dangerBtnText: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+
+  outlineBtn: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f97316',
+    width: '100%',
+  },
+  outlineBtnPressed: { backgroundColor: 'rgba(249,115,22,0.08)' },
+  outlineBtnText: { color: '#f97316', fontSize: 14, fontWeight: '600' },
+
+  // Preview Screen
+  previewScroll: { padding: 16, paddingBottom: 32 },
   previewCard: {
     backgroundColor: '#1c1f2b',
     borderRadius: 16,
     padding: 16,
-    width: '100%',
-    maxWidth: 500,
     borderWidth: 1,
     borderColor: '#2a2d3a',
-    alignItems: 'center',
   },
-  previewTitle: {
-    color: '#f1f5f9',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
+  previewHeader: { marginBottom: 14 },
+  previewTitle: { color: '#f1f5f9', fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  badge: {
+    backgroundColor: '#0f1117',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
   },
-  imageContainer: {
-    position: 'relative',
+  galleryBadge: { borderColor: '#f97316' },
+  badgeText: { color: '#9ca3af', fontSize: 12 },
+
+  imageWrapper: {
     width: '100%',
     aspectRatio: 3 / 4,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#0f1117',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
+    marginBottom: 16,
   },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-  },
-  timestampBadge: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    right: 12,
-    backgroundColor: 'rgba(15, 17, 23, 0.75)',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(42, 45, 58, 0.5)',
-  },
-  timestampText: {
-    color: '#f1f5f9',
-    fontSize: 13,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-    width: '100%',
-  },
-  retakeButton: {
-    flex: 1,
-    backgroundColor: '#2a2d3a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#3b3f54',
-  },
-  retakeButtonText: {
-    color: '#f1f5f9',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
+  previewImage: { width: '100%', height: '100%' },
+
+  actionGrid: { gap: 12 },
+  btnRow: { flexDirection: 'row', gap: 12 },
+
+  // Camera Live View
+  cameraContainer: { flex: 1, backgroundColor: '#000' },
   cameraLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0f1117',
@@ -323,51 +434,82 @@ const styles = StyleSheet.create({
   cameraOverlay: {
     flex: 1,
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
-  cameraHeader: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+  cameraTopBar: {
+    paddingTop: Platform.OS === 'ios' ? 54 : 24,
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingBottom: 14,
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 17, 23, 0.4)',
+    backgroundColor: 'rgba(15,17,23,0.5)',
   },
-  cameraHeaderText: {
+  cameraTitle: {
     color: '#f1f5f9',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  cameraFooter: {
-    backgroundColor: 'rgba(15, 17, 23, 0.65)',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    alignItems: 'center',
+
+  // Viewfinder brackets
+  viewfinderWrapper: {
+    flex: 1,
+    position: 'relative',
   },
-  captureContainer: {
+  corner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderColor: '#f97316',
+    borderWidth: 3,
+  },
+  cornerTL: { top: 30, left: 30, borderRightWidth: 0, borderBottomWidth: 0 },
+  cornerTR: { top: 30, right: 30, borderLeftWidth: 0, borderBottomWidth: 0 },
+  cornerBL: { bottom: 30, left: 30, borderRightWidth: 0, borderTopWidth: 0 },
+  cornerBR: { bottom: 30, right: 30, borderLeftWidth: 0, borderTopWidth: 0 },
+
+  cameraBottomBar: {
+    backgroundColor: 'rgba(15,17,23,0.72)',
+    paddingVertical: 24,
+    paddingHorizontal: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sideBtn: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  captureButtonOuter: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+  sideBtnPressed: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  sideBtnEmoji: { fontSize: 22 },
+  sideBtnLabel: { color: '#d1d5db', fontSize: 10, marginTop: 2, fontWeight: '500' },
+
+  shutterOuter: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 4,
     borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
-  captureButtonOuterPressed: {
-    transform: [{ scale: 0.95 }],
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  shutterOuterPressed: {
+    transform: [{ scale: 0.93 }],
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  captureButtonInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  shutterDisabled: { borderColor: '#6b7280', opacity: 0.5 },
+  shutterInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#f97316',
   },
 });
