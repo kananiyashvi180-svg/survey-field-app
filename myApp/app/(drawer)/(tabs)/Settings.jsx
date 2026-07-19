@@ -41,77 +41,56 @@ export default function SettingsScreen() {
         {
           text: 'Clear',
           onPress: () => {
-            Alert.alert('Success', 'Cache cleared.');
+            Alert.alert('Success', 'Cache cleared successfully.');
           },
         },
       ]
     );
   };
 
+  const settingRows = [
+    { key: 'darkMode', label: 'Dark Mode', desc: 'Use dark background theme' },
+    { key: 'notifications', label: 'Push Notifications', desc: 'Receive alerts for surveys' },
+    { key: 'gpsHighAccuracy', label: 'High Accuracy GPS', desc: 'Enable precise location tracking' },
+    { key: 'offlineSync', label: 'Offline Mode', desc: 'Save surveys locally when offline' },
+    { key: 'autoSaveDraft', label: 'Auto Save Draft', desc: 'Automatically save form drafts' },
+  ];
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Settings</Text>
-        <Text style={styles.text}>Customize your application settings</Text>
+        <Text style={styles.text}>Customize your application preferences.</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Preferences</Text>
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.text}>Dark Mode</Text>
-            <Text style={styles.text}>Use high contrast theme</Text>
+        {settingRows.map((row) => (
+          <View key={row.key} style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>{row.label}</Text>
+              <Text style={styles.settingDesc}>{row.desc}</Text>
+            </View>
+            <Pressable
+              style={settings[row.key] ? styles.toggleOn : styles.toggleOff}
+              onPress={() => toggleSetting(row.key)}
+            >
+              <Text style={styles.toggleText}>{settings[row.key] ? 'ON' : 'OFF'}</Text>
+            </Pressable>
           </View>
-          <Pressable style={styles.toggleBtn} onPress={() => toggleSetting('darkMode')}>
-            <Text style={styles.btnText}>{settings.darkMode ? 'ON' : 'OFF'}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.text}>Push Notifications</Text>
-            <Text style={styles.text}>Receive alerts for assigned surveys</Text>
-          </View>
-          <Pressable style={styles.toggleBtn} onPress={() => toggleSetting('notifications')}>
-            <Text style={styles.btnText}>{settings.notifications ? 'ON' : 'OFF'}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Location & GPS Settings</Text>
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.text}>High Accuracy GPS</Text>
-            <Text style={styles.text}>Enable high precision location tracking</Text>
-          </View>
-          <Pressable style={styles.toggleBtn} onPress={() => toggleSetting('gpsHighAccuracy')}>
-            <Text style={styles.btnText}>{settings.gpsHighAccuracy ? 'ON' : 'OFF'}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.text}>Offline Mode & Sync</Text>
-            <Text style={styles.text}>Save surveys locally when offline</Text>
-          </View>
-          <Pressable style={styles.toggleBtn} onPress={() => toggleSetting('offlineSync')}>
-            <Text style={styles.btnText}>{settings.offlineSync ? 'ON' : 'OFF'}</Text>
-          </Pressable>
-        </View>
+        ))}
       </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>System Actions</Text>
         <Pressable style={styles.btn} onPress={handleSync} disabled={syncing}>
           {syncing ? (
-            <ActivityIndicator size="small" />
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <Text style={styles.btnText}>Sync Data Now</Text>
           )}
         </Pressable>
-
-        <Pressable style={styles.btn} onPress={handleClearCache}>
+        <Pressable style={styles.btnSecondary} onPress={handleClearCache}>
           <Text style={styles.btnText}>Clear Local Cache</Text>
         </Pressable>
       </View>
@@ -122,50 +101,85 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f1117',
-    padding: 10,
+    backgroundColor: '#0b0d12',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
-    backgroundColor: '#1c1f2b',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 8,
   },
   title: {
     color: '#f97316',
     fontSize: 20,
     fontWeight: 'bold',
-    margin: 5,
+    marginBottom: 4,
   },
   sectionTitle: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
-    margin: 5,
+    marginBottom: 12,
   },
   text: {
+    color: '#9ca3af',
+    fontSize: 14,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0b0d12',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  settingInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  settingLabel: {
     color: '#ffffff',
     fontSize: 14,
-    margin: 5,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    margin: 5,
-    padding: 10,
+  settingDesc: {
+    color: '#9ca3af',
+    fontSize: 12,
   },
-  toggleBtn: {
+  toggleOn: {
     backgroundColor: '#f97316',
     padding: 10,
     borderRadius: 8,
-    width: 60,
+    width: 65,
     alignItems: 'center',
+  },
+  toggleOff: {
+    backgroundColor: '#374151',
+    padding: 10,
+    borderRadius: 8,
+    width: 65,
+    alignItems: 'center',
+  },
+  toggleText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
   },
   btn: {
     backgroundColor: '#f97316',
-    padding: 12,
-    margin: 10,
+    padding: 14,
+    marginVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  btnSecondary: {
+    backgroundColor: '#374151',
+    padding: 14,
+    marginVertical: 6,
     borderRadius: 8,
     alignItems: 'center',
   },
