@@ -33,19 +33,31 @@ export default function LocationScreen() {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      if (typeof document !== 'undefined') {
-        const dummyLoc = {
-          coords: { latitude: 21.1702, longitude: 72.8311, accuracy: 5.0 },
-          timestamp: Date.now(),
-        };
-        setLocation(dummyLoc);
-        setIsLoading(false);
+      if (typeof document !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLocation({
+              coords: {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+              },
+              timestamp: pos.timestamp,
+            });
+            setIsLoading(false);
+          },
+          (_err) => {
+            setErrorMsg('Could not get location. Please allow browser location access.');
+            setIsLoading(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({});
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLocation(loc);
     } catch (_err) {
-      setErrorMsg('Could not fetch location.');
+      setErrorMsg('Could not fetch location. Make sure GPS is enabled.');
     }
     setIsLoading(false);
   };
@@ -71,17 +83,17 @@ export default function LocationScreen() {
       Alert.alert('No Location', 'Please fetch the location first.');
       return;
     }
-    const lat = location.coords.latitude.toFixed(4);
-    const lon = location.coords.longitude.toFixed(4);
+    const lat = location.coords.latitude.toFixed(6);
+    const lon = location.coords.longitude.toFixed(6);
     const textToCopy = 'Lat: ' + lat + ', Lon: ' + lon;
     await Clipboard.setStringAsync(textToCopy);
-    Alert.alert('Location Copied', textToCopy);
+    Alert.alert('Copied', 'Location copied to clipboard:\n' + textToCopy);
   };
 
   if (!permission) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color="#f97316" />
         <Text style={styles.text}>Checking permissions...</Text>
       </View>
     );
@@ -91,55 +103,77 @@ export default function LocationScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Location Tracker</Text>
-        <Text style={styles.text}>GPS coordinate capture</Text>
+        <Text style={styles.text}>Capture real GPS coordinates for your survey.</Text>
+      </View>
 
-        {isLoading && (
-          <View style={styles.card}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.text}>Fetching GPS Coordinates...</Text>
-          </View>
-        )}
+      {!permission.granted && (
+        <View style={styles.card}>
+          <Text style={styles.text}>Location permission is required to use this feature.</Text>
+          <Pressable style={styles.btn} onPress={handleRequestPermission}>
+            <Text style={styles.btnText}>Grant Location Access</Text>
+          </Pressable>
+        </View>
+      )}
 
-        {errorMsg && !isLoading && (
-          <View style={styles.card}>
-            <Text style={styles.text}>{errorMsg}</Text>
-          </View>
-        )}
+      {permission.granted && (
+        <View>
+          {isLoading && (
+            <View style={styles.card}>
+              <ActivityIndicator size="large" color="#f97316" />
+              <Text style={styles.text}>Fetching GPS coordinates...</Text>
+            </View>
+          )}
 
-        {!permission.granted && !isLoading && (
-          <View style={styles.card}>
-            <Text style={styles.text}>Location permission is required</Text>
-            <Pressable style={styles.btn} onPress={handleRequestPermission}>
-              <Text style={styles.btnText}>Grant Access</Text>
-            </Pressable>
-          </View>
-        )}
+          {errorMsg && !isLoading && (
+            <View style={styles.card}>
+              <Text style={styles.errorText}>{errorMsg}</Text>
+            </View>
+          )}
 
-        {permission.granted && !isLoading && (
-          <View style={styles.card}>
-            {location ? (
-              <View>
-                <Text style={styles.text}>Latitude: {location.coords.latitude.toFixed(4)}</Text>
-                <Text style={styles.text}>Longitude: {location.coords.longitude.toFixed(4)}</Text>
-                <Text style={styles.text}>Accuracy: {location.coords.accuracy ? location.coords.accuracy.toFixed(1) : 'N/A'}m</Text>
-                <Text style={styles.text}>Time: {new Date(location.timestamp).toLocaleTimeString()}</Text>
-
-                <Pressable style={styles.btn} onPress={fetchLocation}>
-                  <Text style={styles.btnText}>Refresh Location</Text>
-                </Pressable>
-
-                <Pressable style={styles.btn} onPress={copyToClipboard}>
-                  <Text style={styles.btnText}>Copy Location</Text>
-                </Pressable>
+          {location && !isLoading && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Current Location</Text>
+              <View style={styles.coordRow}>
+                <Text style={styles.coordLabel}>Latitude</Text>
+                <Text style={styles.coordValue}>{location.coords.latitude.toFixed(6)}</Text>
               </View>
-            ) : (
-              <Pressable style={styles.btn} onPress={fetchLocation}>
-                <Text style={styles.btnText}>Fetch Location</Text>
+              <View style={styles.coordRow}>
+                <Text style={styles.coordLabel}>Longitude</Text>
+                <Text style={styles.coordValue}>{location.coords.longitude.toFixed(6)}</Text>
+              </View>
+              <View style={styles.coordRow}>
+                <Text style={styles.coordLabel}>Accuracy</Text>
+                <Text style={styles.coordValue}>
+                  {location.coords.accuracy ? location.coords.accuracy.toFixed(1) + 'm' : 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.coordRow}>
+                <Text style={styles.coordLabel}>Time</Text>
+                <Text style={styles.coordValue}>
+                  {new Date(location.timestamp).toLocaleTimeString()}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {!location && !isLoading && !errorMsg && (
+            <View style={styles.card}>
+              <Text style={styles.text}>Press the button below to get your current location.</Text>
+            </View>
+          )}
+
+          <View style={styles.btnGroup}>
+            <Pressable style={styles.btn} onPress={fetchLocation} disabled={isLoading}>
+              <Text style={styles.btnText}>{location ? 'Refresh Location' : 'Get Location'}</Text>
+            </Pressable>
+            {location && (
+              <Pressable style={styles.btn} onPress={copyToClipboard}>
+                <Text style={styles.btnText}>Copy to Clipboard</Text>
               </Pressable>
             )}
           </View>
-        )}
-      </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -147,30 +181,68 @@ export default function LocationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f1117',
-    padding: 10,
+    backgroundColor: '#0b0d12',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  centeredContainer: {
+    flex: 1,
+    backgroundColor: '#0b0d12',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   card: {
-    backgroundColor: '#1c1f2b',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 8,
   },
   title: {
     color: '#f97316',
     fontSize: 20,
     fontWeight: 'bold',
-    margin: 5,
+    marginBottom: 5,
+  },
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
   text: {
-    color: '#ffffff',
+    color: '#9ca3af',
     fontSize: 14,
-    margin: 5,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+  },
+  coordRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: '#0b0d12',
+    borderRadius: 8,
+  },
+  coordLabel: {
+    color: '#9ca3af',
+    fontSize: 14,
+  },
+  coordValue: {
+    color: '#f97316',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  btnGroup: {
+    paddingVertical: 8,
   },
   btn: {
     backgroundColor: '#f97316',
-    padding: 12,
-    margin: 10,
+    padding: 14,
+    marginVertical: 6,
     borderRadius: 8,
     alignItems: 'center',
   },
