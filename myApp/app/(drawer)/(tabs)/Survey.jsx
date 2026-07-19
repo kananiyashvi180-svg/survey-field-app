@@ -2,6 +2,16 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInput, Pressable, ScrollView, View, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 
+export const surveyStore = [];
+
+let surveyCounter = 1;
+
+function generateId() {
+  const id = 'SRV-' + new Date().getFullYear() + '-' + String(surveyCounter).padStart(3, '0');
+  surveyCounter++;
+  return id;
+}
+
 export default function SurveyScreen() {
   const router = useRouter();
 
@@ -10,14 +20,14 @@ export default function SurveyScreen() {
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    return yyyy + '-' + mm + '-' + dd;
+    return dd + '/' + mm + '/' + yyyy;
   };
 
   const [form, setForm] = useState({
     siteName: '',
     clientName: '',
     description: '',
-    priority: '',
+    priority: 'Medium',
     date: getTodayDateString(),
   });
 
@@ -35,125 +45,111 @@ export default function SurveyScreen() {
       tempErrors.clientName = 'Client Name is required';
       isValid = false;
     }
-    if (!form.description.trim()) {
-      tempErrors.description = 'Description is required';
-      isValid = false;
-    }
-    if (!form.priority) {
-      tempErrors.priority = 'Priority selection is required';
-      isValid = false;
-    }
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!form.date.trim()) {
-      tempErrors.date = 'Date is required';
-      isValid = false;
-    } else if (!dateRegex.test(form.date)) {
-      tempErrors.date = 'Enter date in YYYY-MM-DD format';
-      isValid = false;
-    }
 
     setErrors(tempErrors);
     return isValid;
   };
 
   const handleSubmit = () => {
-    if (validateForm()) {
-      Alert.alert('Success', 'Survey for ' + form.siteName + ' has been created.');
-      setForm({
-        siteName: '',
-        clientName: '',
-        description: '',
-        priority: '',
-        date: getTodayDateString(),
-      });
-      setErrors({});
-      router.navigate('/Dashboard');
-    }
-  };
+    if (!validateForm()) return;
 
-  const selectPriority = (level) => {
-    setForm({ ...form, priority: level });
+    const newSurvey = {
+      id: generateId(),
+      siteName: form.siteName.trim(),
+      clientName: form.clientName.trim(),
+      description: form.description.trim() || 'No description provided.',
+      priority: form.priority,
+      date: form.date,
+      status: 'Submitted',
+      submittedAt: new Date().toLocaleString(),
+      notes: '',
+      photo: null,
+      contact: { name: '', number: '' },
+      location: null,
+    };
+
+    surveyStore.unshift(newSurvey);
+
+    Alert.alert('Success', 'Survey for ' + form.siteName.trim() + ' has been created.');
+
+    setForm({
+      siteName: '',
+      clientName: '',
+      description: '',
+      priority: 'Medium',
+      date: getTodayDateString(),
+    });
+    setErrors({});
+
+    router.navigate('/History');
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Create Survey</Text>
-        <Text style={styles.text}>Fill in the required information to record the field survey.</Text>
+        <Text style={styles.sectionHeaderTitle}>Survey Information</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.text}>Site Name *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter project site name"
-            placeholderTextColor="#6b7280"
-            value={form.siteName}
-            onChangeText={(val) => setForm({ ...form, siteName: val })}
-          />
-          {errors.siteName && <Text style={styles.errorText}>{errors.siteName}</Text>}
+        <Text style={styles.label}>Site Name *</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Metro Station Construction"
+          placeholderTextColor="#4b5563"
+          value={form.siteName}
+          onChangeText={(val) => setForm({ ...form, siteName: val })}
+        />
+        {errors.siteName ? <Text style={styles.errorText}>{errors.siteName}</Text> : null}
+
+        <Text style={styles.label}>Client Name *</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Infrastructure Dept"
+          placeholderTextColor="#4b5563"
+          value={form.clientName}
+          onChangeText={(val) => setForm({ ...form, clientName: val })}
+        />
+        {errors.clientName ? <Text style={styles.errorText}>{errors.clientName}</Text> : null}
+
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Provide a brief description of the site survey..."
+          placeholderTextColor="#4b5563"
+          value={form.description}
+          onChangeText={(val) => setForm({ ...form, description: val })}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={styles.label}>Priority Level</Text>
+        <View style={styles.priorityRow}>
+          {['Low', 'Medium', 'High'].map((level) => (
+            <Pressable
+              key={level}
+              style={form.priority === level ? styles.chipSelected : styles.chip}
+              onPress={() => setForm({ ...form, priority: level })}
+            >
+              <Text style={styles.chipText}>{level}</Text>
+            </Pressable>
+          ))}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.text}>Client Name *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter client name"
-            placeholderTextColor="#6b7280"
-            value={form.clientName}
-            onChangeText={(val) => setForm({ ...form, clientName: val })}
-          />
-          {errors.clientName && <Text style={styles.errorText}>{errors.clientName}</Text>}
-        </View>
+        <Text style={styles.label}>Survey Date</Text>
+        <TextInput
+          style={styles.input}
+          value={form.date}
+          onChangeText={(val) => setForm({ ...form, date: val })}
+        />
+      </View>
 
-        <View style={styles.card}>
-          <Text style={styles.text}>Description *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Provide a detailed description..."
-            placeholderTextColor="#6b7280"
-            value={form.description}
-            onChangeText={(val) => setForm({ ...form, description: val })}
-          />
-          {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-        </View>
+      <Text style={styles.sectionTitle}>Attach Site Artifacts</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.text}>Priority *</Text>
-          <View style={styles.row}>
-            {['Low', 'Medium', 'High'].map((level) => (
-              <Pressable
-                key={level}
-                style={styles.chip}
-                onPress={() => selectPriority(level)}
-              >
-                <Text style={styles.btnText}>{level}</Text>
-              </Pressable>
-            ))}
-          </View>
-          {errors.priority && <Text style={styles.errorText}>{errors.priority}</Text>}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.text}>Survey Date *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#6b7280"
-            value={form.date}
-            onChangeText={(val) => setForm({ ...form, date: val })}
-          />
-          {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
-        </View>
-
-        <View style={styles.row}>
-          <Pressable style={styles.btn} onPress={() => router.navigate('/Dashboard')}>
-            <Text style={styles.btnText}>Cancel</Text>
-          </Pressable>
-          <Pressable style={styles.btn} onPress={handleSubmit}>
-            <Text style={styles.btnText}>Create Survey</Text>
-          </Pressable>
-        </View>
+      <View style={styles.btnRow}>
+        <Pressable style={styles.btnSecondary} onPress={() => router.navigate('/Dashboard')}>
+          <Text style={styles.btnText}>Cancel</Text>
+        </Pressable>
+        <Pressable style={styles.btn} onPress={handleSubmit}>
+          <Text style={styles.btnText}>Create Survey</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -162,51 +158,91 @@ export default function SurveyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f1117',
-    padding: 10,
+    backgroundColor: '#0b0d12',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
-    backgroundColor: '#1c1f2b',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
+    backgroundColor: '#151821',
+    borderRadius: 16,
+    padding: 20,
+    marginVertical: 8,
   },
-  title: {
-    color: '#f97316',
-    fontSize: 20,
-    fontWeight: 'bold',
-    margin: 5,
-  },
-  text: {
+  sectionHeaderTitle: {
     color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 16,
+    paddingLeft: 4,
+  },
+  label: {
+    color: '#9ca3af',
     fontSize: 14,
-    margin: 5,
+    fontWeight: 'bold',
+    marginTop: 14,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#0f1117',
+    backgroundColor: '#0b0d12',
     color: '#ffffff',
-    padding: 10,
-    borderRadius: 10,
-    margin: 5,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 14,
   },
-  row: {
+  textArea: {
+    minHeight: 80,
+  },
+  priorityRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    margin: 5,
+    marginTop: 4,
+    marginBottom: 8,
   },
   chip: {
-    backgroundColor: '#f97316',
-    padding: 8,
-    borderRadius: 15,
-    margin: 5,
+    backgroundColor: '#1c1f2b',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginRight: 8,
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipSelected: {
+    backgroundColor: '#f97316',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  btnRow: {
+    flexDirection: 'row',
+    marginVertical: 20,
+    marginBottom: 40,
   },
   btn: {
     backgroundColor: '#f97316',
-    padding: 12,
-    margin: 10,
+    padding: 14,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+  },
+  btnSecondary: {
+    backgroundColor: '#374151',
+    padding: 14,
+    marginHorizontal: 4,
     borderRadius: 8,
     alignItems: 'center',
     flex: 1,
@@ -219,6 +255,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ef4444',
     fontSize: 12,
-    margin: 5,
+    marginTop: 4,
   },
 });
