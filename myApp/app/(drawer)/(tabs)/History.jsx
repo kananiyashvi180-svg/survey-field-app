@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,75 +8,38 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
-
-const SAMPLE_HISTORY = [
-  {
-    id: 'SRV-2026-001',
-    siteName: 'Field Survey – Plot A',
-    clientName: 'Rajesh Patel',
-    description: 'Comprehensive soil and crop assessment of Plot A.',
-    priority: 'High',
-    date: '2026-07-19',
-    status: 'Submitted',
-    contact: { name: 'Rajesh Patel', number: '+91 98765 43210' },
-    location: { latitude: 23.0225, longitude: 72.5713, accuracy: 4.8 },
-    notes: 'Soil moisture adequate. Irrigation pumps working.',
-    submittedAt: '19/07/2026, 09:14:32 AM',
-  },
-  {
-    id: 'SRV-2026-002',
-    siteName: 'Soil Inspection – Zone B',
-    clientName: 'Meena Shah',
-    description: 'Detailed soil pH and nutrient test in Zone B.',
-    priority: 'Medium',
-    date: '2026-07-18',
-    status: 'Submitted',
-    contact: { name: 'Meena Shah', number: '+91 91234 56789' },
-    location: { latitude: 23.0331, longitude: 72.5852, accuracy: 6.2 },
-    notes: 'Recommend potassium-rich fertiliser application.',
-    submittedAt: '18/07/2026, 04:45:10 PM',
-  },
-  {
-    id: 'SRV-2026-003',
-    siteName: 'Crop Assessment – Block C',
-    clientName: 'Arjun Mehta',
-    description: 'Crop yield estimation for cotton Block C.',
-    priority: 'Low',
-    date: '2026-07-17',
-    status: 'Submitted',
-    contact: { name: 'Arjun Mehta', number: '+91 99887 76655' },
-    location: { latitude: 23.0107, longitude: 72.5609, accuracy: 3.1 },
-    notes: 'Yield estimated at 85%. Pest pressure low.',
-    submittedAt: '17/07/2026, 11:22:00 AM',
-  },
-  {
-    id: 'SRV-2026-004',
-    siteName: 'Water Source Check – Sector D',
-    clientName: 'Priya Desai',
-    description: 'Evaluated borewell depth and water quality.',
-    priority: 'High',
-    date: '2026-07-16',
-    status: 'Pending',
-    contact: { name: 'Priya Desai', number: '+91 93456 78901' },
-    location: { latitude: 22.9984, longitude: 72.5446, accuracy: 5.5 },
-    notes: 'Water salinity slightly above threshold.',
-    submittedAt: null,
-  },
-];
+import { surveyStore } from './Survey';
 
 export default function HistoryScreen() {
-  const [surveys, setSurveys] = useState(SAMPLE_HISTORY);
+  const [surveys, setSurveys] = useState([]);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedSurvey, setSelectedSurvey] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadSurveys = () => {
+    setSurveys([...surveyStore]);
+  };
+
+  useEffect(() => {
+    loadSurveys();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadSurveys();
+    setRefreshing(false);
+  };
 
   const filteredSurveys = [];
   for (let i = 0; i < surveys.length; i++) {
     const s = surveys[i];
     const matchesFilter = activeFilter === 'All' || s.priority === activeFilter;
     const q = query.trim().toLowerCase();
-    const matchesQuery = !q ||
+    const matchesQuery =
+      !q ||
       s.siteName.toLowerCase().includes(q) ||
       s.clientName.toLowerCase().includes(q) ||
       s.id.toLowerCase().includes(q) ||
@@ -89,58 +52,53 @@ export default function HistoryScreen() {
 
   const handleDelete = (item) => {
     if (typeof window !== 'undefined' && typeof window.confirm !== 'undefined') {
-      const confirmed = window.confirm('Delete survey ' + item.id + '?');
+      const confirmed = window.confirm(
+        'Delete survey "' + item.siteName + '" (' + item.id + ')? This cannot be undone.'
+      );
       if (confirmed) {
-        setSurveys((prev) => prev.filter((s) => s.id !== item.id));
+        const idx = surveyStore.findIndex((s) => s.id === item.id);
+        if (idx !== -1) surveyStore.splice(idx, 1);
+        loadSurveys();
       }
       return;
     }
     Alert.alert(
       'Delete Survey',
-      'Delete survey ' + item.id + '?',
+      'Delete "' + item.siteName + '" (' + item.id + ')?\n\nThis cannot be undone.',
       [
         { text: 'Cancel' },
         {
           text: 'Delete',
           onPress: () => {
-            setSurveys((prev) => prev.filter((s) => s.id !== item.id));
+            const idx = surveyStore.findIndex((s) => s.id === item.id);
+            if (idx !== -1) surveyStore.splice(idx, 1);
+            loadSurveys();
           },
         },
       ]
     );
   };
 
-  const total = surveys.length;
-  let submitted = 0;
-  let pending = 0;
-  for (let i = 0; i < surveys.length; i++) {
-    if (surveys[i].status === 'Submitted') {
-      submitted++;
-    } else {
-      pending++;
-    }
-  }
-
   return (
     <View style={styles.container}>
-      <Modal transparent visible={selectedSurvey !== null}>
+      <Modal transparent visible={selectedSurvey !== null} animationType="fade">
         {selectedSurvey && (
           <View style={styles.modalOverlay}>
-            <View style={styles.card}>
-              <Text style={styles.title}>{selectedSurvey.siteName}</Text>
-              <Text style={styles.text}>Survey ID: {selectedSurvey.id}</Text>
-              <Text style={styles.text}>Priority: {selectedSurvey.priority}</Text>
-              <Text style={styles.text}>Status: {selectedSurvey.status}</Text>
-              <Text style={styles.text}>Client: {selectedSurvey.clientName}</Text>
-              <Text style={styles.text}>Date: {selectedSurvey.date}</Text>
-              <Text style={styles.text}>Description: {selectedSurvey.description}</Text>
-              <Text style={styles.text}>Contact: {selectedSurvey.contact.name} ({selectedSurvey.contact.number})</Text>
-              <Text style={styles.text}>Lat: {selectedSurvey.location.latitude}, Lon: {selectedSurvey.location.longitude}</Text>
-              <Text style={styles.text}>Notes: {selectedSurvey.notes}</Text>
-              {selectedSurvey.submittedAt && (
-                <Text style={styles.text}>Submitted: {selectedSurvey.submittedAt}</Text>
-              )}
-              <Pressable style={styles.btn} onPress={() => setSelectedSurvey(null)}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>{selectedSurvey.siteName}</Text>
+              <Text style={styles.modalText}>ID: {selectedSurvey.id}</Text>
+              <Text style={styles.modalText}>Status: {selectedSurvey.status}</Text>
+              <Text style={styles.modalText}>Priority: {selectedSurvey.priority}</Text>
+              <Text style={styles.modalText}>Client: {selectedSurvey.clientName}</Text>
+              <Text style={styles.modalText}>Date: {selectedSurvey.date}</Text>
+              <Text style={styles.modalText}>Description: {selectedSurvey.description}</Text>
+              {selectedSurvey.notes ? (
+                <Text style={styles.modalText}>Notes: {selectedSurvey.notes}</Text>
+              ) : null}
+              {selectedSurvey.submittedAt ? (
+                <Text style={styles.modalText}>Submitted: {selectedSurvey.submittedAt}</Text>
+              ) : null}
+              <Pressable style={styles.btnClose} onPress={() => setSelectedSurvey(null)}>
                 <Text style={styles.btnText}>Close</Text>
               </Pressable>
             </View>
@@ -148,33 +106,24 @@ export default function HistoryScreen() {
         )}
       </Modal>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Survey History</Text>
-        <View style={styles.row}>
-          <Text style={styles.text}>Total: {total}</Text>
-          <Text style={styles.text}>Submitted: {submitted}</Text>
-          <Text style={styles.text}>Pending: {pending}</Text>
-        </View>
-      </View>
-
-      <View style={styles.card}>
+      <View style={styles.searchCard}>
         <TextInput
-          style={styles.input}
+          style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search by site, client, ID..."
-          placeholderTextColor="#6b7280"
+          placeholder="Search by site or client..."
+          placeholderTextColor="#4b5563"
         />
       </View>
 
-      <View style={styles.row}>
+      <View style={styles.filterRow}>
         {['All', 'High', 'Medium', 'Low'].map((p) => (
           <Pressable
             key={p}
-            style={styles.chip}
+            style={activeFilter === p ? styles.chipActive : styles.chip}
             onPress={() => setActiveFilter(p)}
           >
-            <Text style={styles.text}>{p}</Text>
+            <Text style={styles.chipText}>{p}</Text>
           </Pressable>
         ))}
       </View>
@@ -182,20 +131,47 @@ export default function HistoryScreen() {
       <FlatList
         data={filteredSurveys}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No surveys found</Text>
+            <Text style={styles.emptyText}>
+              {surveys.length === 0
+                ? 'Create a survey to see it here.'
+                : 'Try changing your search or filter.'}
+            </Text>
+          </View>
+        }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.title}>{item.siteName}</Text>
-            <Text style={styles.text}>ID: {item.id} | Status: {item.status}</Text>
-            <Text style={styles.text}>Client: {item.clientName} | Date: {item.date}</Text>
-            <View style={styles.row}>
-              <Pressable style={styles.btn} onPress={() => setSelectedSurvey(item)}>
-                <Text style={styles.btnText}>View</Text>
-              </Pressable>
-              <Pressable style={styles.btn} onPress={() => handleDelete(item)}>
-                <Text style={styles.btnText}>Delete</Text>
+          <Pressable style={styles.surveyCard} onPress={() => setSelectedSurvey(item)}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.surveyTitle}>{item.siteName}</Text>
+              <View style={[
+                styles.badge,
+                item.priority === 'High' ? styles.badgeHigh : item.priority === 'Low' ? styles.badgeLow : styles.badgeMedium
+              ]}>
+                <Text style={styles.badgeText}>{item.priority}</Text>
+              </View>
+            </View>
+            <Text style={styles.cardMeta}>Client: {item.clientName}</Text>
+            <Text style={styles.cardMeta} numberOfLines={2}>
+              {item.description}
+            </Text>
+
+            <View style={styles.cardFooter}>
+              <View style={styles.footerLeft}>
+                <Text style={styles.footerDate}>📅 {item.date}</Text>
+                <Text style={[styles.statusIcon, { color: '#22c55e' }]}>📷</Text>
+                <Text style={[styles.statusIcon, { color: '#f97316' }]}>📍</Text>
+                <Text style={[styles.statusIcon, { color: '#a855f7' }]}>👥</Text>
+              </View>
+              <Pressable style={styles.deleteIconBtn} onPress={() => handleDelete(item)}>
+                <Text style={styles.deleteIconText}>🗑️</Text>
               </Pressable>
             </View>
-          </View>
+          </Pressable>
         )}
       />
     </View>
@@ -205,65 +181,170 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f1117',
-    padding: 10,
+    backgroundColor: '#0b0d12',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
-  card: {
-    backgroundColor: '#1c1f2b',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
+  searchCard: {
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 6,
   },
-  title: {
-    color: '#f97316',
-    fontSize: 18,
-    fontWeight: 'bold',
-    margin: 5,
-  },
-  text: {
+  searchInput: {
+    backgroundColor: '#0b0d12',
     color: '#ffffff',
+    padding: 10,
+    borderRadius: 8,
     fontSize: 14,
-    margin: 5,
   },
-  row: {
+  filterRow: {
+    flexDirection: 'row',
+    marginVertical: 8,
+  },
+  chip: {
+    backgroundColor: '#1c1f2b',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  chipActive: {
+    backgroundColor: '#0ea5e9',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  chipText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  surveyCard: {
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 6,
+  },
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    margin: 5,
+    marginBottom: 8,
   },
-  input: {
-    backgroundColor: '#0f1117',
+  surveyTitle: {
     color: '#ffffff',
-    padding: 10,
-    borderRadius: 10,
-    margin: 5,
-  },
-  chip: {
-    backgroundColor: '#f97316',
-    padding: 8,
-    borderRadius: 15,
-    margin: 5,
-    flex: 1,
-    alignItems: 'center',
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 10,
-    margin: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
+  },
+  badge: {
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeHigh: {
+    backgroundColor: '#ef4444',
+  },
+  badgeMedium: {
+    backgroundColor: '#f97316',
+  },
+  badgeLow: {
+    backgroundColor: '#22c55e',
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  cardMeta: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+    paddingTop: 8,
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  footerDate: {
+    color: '#9ca3af',
+    fontSize: 13,
+    marginRight: 12,
+  },
+  statusIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  deleteIconBtn: {
+    padding: 4,
+  },
+  deleteIconText: {
+    fontSize: 16,
+  },
+  emptyCard: {
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 30,
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  emptyTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptyText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0f1117',
+    backgroundColor: '#000000aa',
     padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#151821',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+  },
+  modalTitle: {
+    color: '#f97316',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    color: '#ffffff',
+    fontSize: 14,
+    marginBottom: 6,
+  },
+  btnClose: {
+    backgroundColor: '#f97316',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  btnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
