@@ -1,11 +1,11 @@
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { Text, Pressable } from 'react-native';
-import { usePathname, useRouter, Href } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
-import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { DrawerContentScrollView, DrawerItem, DrawerContentComponentProps } from '@react-navigation/drawer';
 
-function CustomDrawerContent(props: any) {
+function CustomDrawerContent(props: DrawerContentComponentProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -65,7 +65,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>📋</Text>}
-        onPress={() => router.push('/(drawer)/(tabs)/Clipboard' as Href)}
+        onPress={() => router.push('/(drawer)/(tabs)/Clipboard')}
       />
       <DrawerItem
         label="Settings"
@@ -73,7 +73,7 @@ function CustomDrawerContent(props: any) {
         activeTintColor="#f97316"
         inactiveTintColor="#9ca3af"
         icon={() => <Text style={{ fontSize: 20 }}>⚙️</Text>}
-        onPress={() => router.push('/(drawer)/(tabs)/Settings' as Href)}
+        onPress={() => router.push('/(drawer)/(tabs)/Settings')}
       />
     </DrawerContentScrollView>
   );
