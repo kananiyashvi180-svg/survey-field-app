@@ -18,24 +18,25 @@ export default function CameraScreen() {
   const [photo, setPhoto] = useState(null);
   const [facing, setFacing] = useState('back');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const cameraRef = useRef(null);
 
   useEffect(() => {
-    if (typeof document === 'undefined') {
-      checkPermissions();
-    } else {
-      setCameraPermission({ granted: true });
-      setMediaPermission({ granted: true });
-    }
+    const checkPermissions = async () => {
+      if (typeof document === 'undefined') {
+        const cam = await getCameraPermissionsAsync();
+        setCameraPermission(cam);
+        const media = await MediaLibrary.getPermissionsAsync();
+        setMediaPermission(media);
+      } else {
+        setCameraPermission({ granted: true });
+        setMediaPermission({ granted: true });
+      }
+      setIsLoading(false);
+    };
+    checkPermissions();
   }, []);
-
-  const checkPermissions = async () => {
-    const cam = await getCameraPermissionsAsync();
-    setCameraPermission(cam);
-    const media = await MediaLibrary.getPermissionsAsync();
-    setMediaPermission(media);
-  };
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
@@ -50,33 +51,24 @@ export default function CameraScreen() {
   };
 
   const handleFlip = () => {
-    if (facing === 'back') {
-      setFacing('front');
-    } else {
-      setFacing('back');
-    }
+    setFacing(facing === 'back' ? 'front' : 'back');
   };
 
   const handleDelete = () => {
     if (typeof document !== 'undefined') {
-      const confirmed = window.confirm('Are you sure you want to discard this photo?');
-      if (confirmed) {
-        setPhoto(null);
-      }
+      const confirmed = window.confirm('Discard this photo?');
+      if (confirmed) setPhoto(null);
       return;
     }
-    Alert.alert(
-      'Delete Photo',
-      'Are you sure you want to discard this photo?',
-      [
-        { text: 'Cancel' },
-        { text: 'Delete', onPress: () => setPhoto(null) },
-      ]
-    );
+    Alert.alert('Delete Photo', 'Discard this photo?', [
+      { text: 'Cancel' },
+      { text: 'Delete', onPress: () => setPhoto(null) },
+    ]);
   };
 
   const handleSaveToGallery = async () => {
     if (!photo) return;
+
     if (typeof document !== 'undefined') {
       setIsSaving(true);
       try {
@@ -88,7 +80,7 @@ export default function CameraScreen() {
         document.body.removeChild(link);
         Alert.alert('Saved', 'Photo downloaded.');
       } catch (_err) {
-        Alert.alert('Save Failed', 'Could not download.');
+        Alert.alert('Save Failed', 'Could not download photo.');
       } finally {
         setIsSaving(false);
       }
@@ -109,7 +101,7 @@ export default function CameraScreen() {
       await MediaLibrary.saveToLibraryAsync(photo.uri);
       Alert.alert('Saved', 'Photo saved to gallery.');
     } catch (_err) {
-      Alert.alert('Save Failed', 'Could not save.');
+      Alert.alert('Save Failed', 'Could not save to gallery.');
     } finally {
       setIsSaving(false);
     }
@@ -159,7 +151,7 @@ export default function CameraScreen() {
       });
 
       if (assets.assets.length === 0) {
-        Alert.alert('No Photos', 'No photos found.');
+        Alert.alert('No Photos', 'No photos found in gallery.');
         return;
       }
 
@@ -172,23 +164,26 @@ export default function CameraScreen() {
   };
 
   const requestCameraPermission = async () => {
+    setIsLoading(true);
     const response = await requestCameraPermissionsAsync();
     setCameraPermission(response);
+    setIsLoading(false);
   };
 
-  if (!cameraPermission) {
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.text}>Checking permissions...</Text>
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text style={styles.loadingText}>Loading camera...</Text>
       </View>
     );
   }
 
-  if (!cameraPermission.granted) {
+  if (!cameraPermission || !cameraPermission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Camera Access Required</Text>
+      <View style={styles.centeredContainer}>
+        <Text style={styles.title}>Camera Access Required</Text>
+        <Text style={styles.text}>Please grant camera permission to continue.</Text>
         <Pressable style={styles.btn} onPress={requestCameraPermission}>
           <Text style={styles.btnText}>Grant Camera Access</Text>
         </Pressable>
@@ -199,27 +194,34 @@ export default function CameraScreen() {
   if (photo) {
     return (
       <ScrollView style={styles.container}>
-        <Text style={styles.text}>Photo Preview</Text>
-        <Text style={styles.text}>{photo.timestamp}</Text>
-        {photo.fromGallery && <Text style={styles.text}>From Gallery</Text>}
-        
+        <View style={styles.card}>
+          <Text style={styles.title}>Photo Preview</Text>
+          <Text style={styles.text}>Captured at: {photo.timestamp}</Text>
+          {photo.fromGallery ? <Text style={styles.mutedText}>Selected from Gallery</Text> : null}
+        </View>
+
         <Image source={{ uri: photo.uri }} style={styles.image} />
 
-        <Pressable style={styles.btn} onPress={() => setPhoto(null)}>
-          <Text style={styles.btnText}>Retake</Text>
-        </Pressable>
-
-        <Pressable style={styles.btn} onPress={handleDelete}>
-          <Text style={styles.btnText}>Delete</Text>
-        </Pressable>
-
-        <Pressable style={styles.btn} onPress={handleSelectFromGallery}>
-          <Text style={styles.btnText}>Select from Gallery</Text>
-        </Pressable>
-
-        <Pressable style={styles.btn} onPress={handleSaveToGallery} disabled={isSaving}>
-          <Text style={styles.btnText}>Save to Gallery</Text>
-        </Pressable>
+        <View style={styles.btnGroup}>
+          <Pressable style={styles.btn} onPress={() => setPhoto(null)}>
+            <Text style={styles.btnText}>Retake</Text>
+          </Pressable>
+          <Pressable style={styles.btn} onPress={handleSelectFromGallery}>
+            <Text style={styles.btnText}>Select from Gallery</Text>
+          </Pressable>
+        </View>
+        <View style={styles.btnGroup}>
+          <Pressable style={styles.btnSecondary} onPress={handleDelete}>
+            <Text style={styles.btnText}>Delete Photo</Text>
+          </Pressable>
+          <Pressable style={styles.btn} onPress={handleSaveToGallery} disabled={isSaving}>
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.btnText}>Save to Gallery</Text>
+            )}
+          </Pressable>
+        </View>
       </ScrollView>
     );
   }
@@ -232,13 +234,11 @@ export default function CameraScreen() {
         <Pressable style={styles.btn} onPress={handleCapture}>
           <Text style={styles.btnText}>Capture</Text>
         </Pressable>
-
         <Pressable style={styles.btn} onPress={handleFlip}>
-          <Text style={styles.btnText}>Flip Camera</Text>
+          <Text style={styles.btnText}>Flip</Text>
         </Pressable>
-
         <Pressable style={styles.btn} onPress={handleSelectFromGallery}>
-          <Text style={styles.btnText}>Open Gallery</Text>
+          <Text style={styles.btnText}>Gallery</Text>
         </Pressable>
       </View>
     </View>
@@ -248,45 +248,86 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f1117',
+    backgroundColor: '#0b0d12',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  centeredContainer: {
+    flex: 1,
+    backgroundColor: '#0b0d12',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+  },
+  loadingText: {
+    color: '#9ca3af',
+    fontSize: 15,
+    marginTop: 12,
+  },
+  title: {
+    color: '#f97316',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   text: {
     color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    margin: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 14,
+    marginBottom: 4,
   },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 15,
-    margin: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+  mutedText: {
+    color: '#9ca3af',
+    fontSize: 13,
   },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  image: {
-    width: 300,
-    height: 400,
-    borderRadius: 10,
-    margin: 20,
+  card: {
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 8,
   },
   camera: {
     flex: 1,
-    height: 400,
-    borderRadius: 10,
+    marginVertical: 10,
+    borderRadius: 12,
   },
   controls: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
+    padding: 16,
+    backgroundColor: '#151821',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  btnGroup: {
+    flexDirection: 'row',
+    marginVertical: 4,
+  },
+  btn: {
+    backgroundColor: '#f97316',
+    padding: 14,
+    marginHorizontal: 4,
+    borderRadius: 8,
     alignItems: 'center',
-    padding: 10,
+    flex: 1,
+  },
+  btnSecondary: {
+    backgroundColor: '#7f1d1d',
+    padding: 14,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+  },
+  btnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  image: {
+    width: '100%',
+    height: 300,
+    borderRadius: 12,
+    marginVertical: 8,
+    alignSelf: 'center',
   },
 });
