@@ -15,7 +15,7 @@ export default function ProfileScreen() {
     rollNo: 'SUK250054CE037',
     role: 'Lead Field Surveyor',
     email: 'yashvi.kanani@surveyfield.org',
-    phone: '+91 98765 43210',
+    phone: '+91 91064 54707',
     organization: 'GeoSpace Solutions Ltd.',
   });
 
@@ -28,13 +28,12 @@ export default function ProfileScreen() {
       return;
     }
     if (!draft.email.trim() || !draft.email.includes('@')) {
-      Alert.alert('Validation Error', 'Please enter a valid email.');
+      Alert.alert('Validation Error', 'Enter a valid email.');
       return;
     }
-
     setProfile({ ...draft });
     setEditMode(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+    Alert.alert('Success', 'Profile updated.');
   };
 
   const handleCancel = () => {
@@ -42,143 +41,84 @@ export default function ProfileScreen() {
     setEditMode(false);
   };
 
-  const getInitials = (name) => {
-    const parts = name.trim().split(' ').filter(Boolean);
-    if (parts.length === 0) return '?';
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-      {/* Header Profile Section */}
-      <View style={styles.avatarCard}>
-        <View style={styles.avatarBg}>
-          <Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.card}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>YK</Text>
         </View>
-        <Text style={styles.profileName}>{profile.name}</Text>
-        <Text style={styles.profileRole}>{profile.role}</Text>
-        <View style={styles.idBadge}>
-          <Text style={styles.idBadgeText}>{profile.rollNo}</Text>
-        </View>
+        <Text style={styles.title}>{profile.name}</Text>
+        <Text style={styles.text}>{profile.role}</Text>
+        <Text style={styles.text}>{profile.rollNo}</Text>
       </View>
 
-      {/* Info Form / Details */}
-      <View style={styles.detailsCard}>
-        <Text style={styles.sectionTitle}>👤 Personal Information</Text>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Personal Information</Text>
 
         {editMode ? (
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.name}
-                onChangeText={(v) => setDraft((p) => ({ ...p, name: v }))}
-                placeholder="Enter full name"
-                placeholderTextColor="#6b7280"
-              />
-            </View>
+          <View>
+            <Text style={styles.text}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.name}
+              onChangeText={(v) => setDraft({ ...draft, name: v })}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Role</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.role}
-                onChangeText={(v) => setDraft((p) => ({ ...p, role: v }))}
-                placeholder="Enter role"
-                placeholderTextColor="#6b7280"
-              />
-            </View>
+            <Text style={styles.text}>Role</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.role}
+              onChangeText={(v) => setDraft({ ...draft, role: v })}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.email}
-                onChangeText={(v) => setDraft((p) => ({ ...p, email: v }))}
-                placeholder="Enter email"
-                placeholderTextColor="#6b7280"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <Text style={styles.text}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.email}
+              onChangeText={(v) => setDraft({ ...draft, email: v })}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.phone}
-                onChangeText={(v) => setDraft((p) => ({ ...p, phone: v }))}
-                placeholder="Enter phone number"
-                placeholderTextColor="#6b7280"
-                keyboardType="phone-pad"
-              />
-            </View>
+            <Text style={styles.text}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.phone}
+              onChangeText={(v) => setDraft({ ...draft, phone: v })}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Organization</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.organization}
-                onChangeText={(v) => setDraft((p) => ({ ...p, organization: v }))}
-                placeholder="Enter organization"
-                placeholderTextColor="#6b7280"
-              />
-            </View>
+            <Text style={styles.text}>Organization</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.organization}
+              onChangeText={(v) => setDraft({ ...draft, organization: v })}
+            />
 
-            <View style={styles.btnRow}>
-              <Pressable style={styles.cancelBtn} onPress={handleCancel}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+            <View style={styles.row}>
+              <Pressable style={styles.btn} onPress={handleCancel}>
+                <Text style={styles.btnText}>Cancel</Text>
               </Pressable>
-              <Pressable style={styles.saveBtn} onPress={handleSave}>
-                <Text style={styles.saveBtnText}>Save</Text>
+              <Pressable style={styles.btn} onPress={handleSave}>
+                <Text style={styles.btnText}>Save</Text>
               </Pressable>
             </View>
           </View>
         ) : (
-          <View style={styles.infoList}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Organization</Text>
-              <Text style={styles.infoValue}>{profile.organization}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{profile.email}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone</Text>
-              <Text style={styles.infoValue}>{profile.phone}</Text>
-            </View>
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoLabel}>Roll Number</Text>
-              <Text style={styles.infoValue}>{profile.rollNo}</Text>
-            </View>
+          <View>
+            <Text style={styles.text}>Organization: {profile.organization}</Text>
+            <Text style={styles.text}>Email: {profile.email}</Text>
+            <Text style={styles.text}>Phone: {profile.phone}</Text>
+            <Text style={styles.text}>Roll Number: {profile.rollNo}</Text>
 
-            <Pressable
-              style={({ pressed }) => [styles.editBtn, pressed && styles.editBtnPressed]}
-              onPress={() => {
-                setDraft({ ...profile });
-                setEditMode(true);
-              }}
-            >
-              <Text style={styles.editBtnText}>✏️  Edit Profile</Text>
+            <Pressable style={styles.btn} onPress={() => { setDraft({ ...profile }); setEditMode(true); }}>
+              <Text style={styles.btnText}>Edit Profile</Text>
             </Pressable>
           </View>
         )}
       </View>
 
-      {/* App details card */}
-      <View style={styles.detailsCard}>
-        <Text style={styles.sectionTitle}>⚙️ Assignment Details</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Assignment</Text>
-          <Text style={styles.infoValue}>Mini Project Assignment</Text>
-        </View>
-        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-          <Text style={styles.infoLabel}>App Version</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
-        </View>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Assignment Details</Text>
+        <Text style={styles.text}>Assignment: Mini Project Assignment</Text>
+        <Text style={styles.text}>App Version: 1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -188,166 +128,70 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f1117',
+    padding: 10,
   },
-  scrollContainer: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  avatarCard: {
+  card: {
     backgroundColor: '#1c1f2b',
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 10,
+    padding: 15,
+    margin: 10,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    marginBottom: 16,
   },
-  avatarBg: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#f97316',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 3,
-    borderColor: '#2a2d3a',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    margin: 10,
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 32,
+    color: '#ffffff',
+    fontSize: 24,
     fontWeight: 'bold',
   },
-  profileName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#f1f5f9',
-    marginBottom: 4,
-  },
-  profileRole: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginBottom: 12,
-  },
-  idBadge: {
-    backgroundColor: '#2a2d3a',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#3b3f54',
-  },
-  idBadgeText: {
+  title: {
     color: '#f97316',
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 12,
-  },
-  detailsCard: {
-    backgroundColor: '#1c1f2b',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    marginBottom: 16,
+    margin: 5,
   },
   sectionTitle: {
-    fontSize: 15,
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#f1f5f9',
-    marginBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2d3a',
-    paddingBottom: 8,
+    margin: 5,
   },
-  infoList: {
-    gap: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#0f1117',
-  },
-  infoLabel: {
-    color: '#6b7280',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoValue: {
-    color: '#e2e8f0',
+  text: {
+    color: '#ffffff',
     fontSize: 14,
-    fontWeight: '500',
-  },
-  editBtn: {
-    backgroundColor: '#2a2d3a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 14,
-    borderWidth: 1,
-    borderColor: '#3b3f54',
-  },
-  editBtnPressed: {
-    opacity: 0.85,
-  },
-  editBtnText: {
-    color: '#f1f5f9',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  form: {
-    gap: 12,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    color: '#9ca3af',
-    fontSize: 12,
-    fontWeight: '600',
+    margin: 5,
   },
   input: {
     backgroundColor: '#0f1117',
-    color: '#f1f5f9',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
+    color: '#ffffff',
+    padding: 10,
+    borderRadius: 10,
+    margin: 5,
+    width: 250,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-  },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: '#2a2d3a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#3b3f54',
-  },
-  cancelBtnText: {
-    color: '#f1f5f9',
-    fontWeight: '600',
-  },
-  saveBtn: {
-    flex: 1,
+  btn: {
     backgroundColor: '#f97316',
+    padding: 12,
+    margin: 10,
     borderRadius: 8,
-    paddingVertical: 12,
     alignItems: 'center',
+    flex: 1,
   },
-  saveBtnText: {
-    color: '#fff',
+  btnText: {
+    color: '#ffffff',
+    fontSize: 14,
     fontWeight: 'bold',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 250,
   },
 });
