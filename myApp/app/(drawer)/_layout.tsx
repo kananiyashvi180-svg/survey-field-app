@@ -84,12 +84,13 @@ export default function DrawerLayout() {
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: '#0f1117' },
-        headerTintColor: '#f1f5f9',
+        headerStyle: { backgroundColor: '#1ca1d1ff' },
+        headerTintColor: '#edf5fcff',
         headerTitleStyle: { fontWeight: '700' },
+        headerTitleAlign: 'center',
         drawerActiveTintColor: '#f97316',
         drawerInactiveTintColor: '#9ca3af',
-        drawerStyle: { backgroundColor: '#1c1f2b' },
+        drawerStyle: { backgroundColor: '#fff' },
         headerLeft: () => (
           <Pressable
             onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}

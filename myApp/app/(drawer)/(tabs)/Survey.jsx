@@ -233,14 +233,14 @@ const styles = StyleSheet.create({
     borderColor: '#1e293b',
   },
   chipSelected: {
-    backgroundColor: '#f97316',
+    backgroundColor: '#1cbdddff',
     paddingVertical: 10,
     borderRadius: 8,
     marginRight: 8,
     flex: 1,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#f97316',
+    borderColor: '#1cbdddff',
   },
   chipText: {
     color: '#9ca3af',
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   btnPrimary: {
-    backgroundColor: '#f97316',
+    backgroundColor: '#1cbdddff',
     padding: 14,
     marginLeft: 6,
     borderRadius: 10,

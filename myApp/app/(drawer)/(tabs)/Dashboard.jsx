@@ -83,8 +83,9 @@ export default function Dashboard() {
     <ScrollView style={styles.container}>
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeText}>Welcome Back,</Text>
-        <Text style={styles.heroText}>Field Surveyor</Text>
+        <Text style={styles.heroText}>Yashvi Kanani</Text>
       </View>
+
 
       <View style={styles.topGrid}>
         <View style={[styles.card, { flex: 1.2 }]}>
@@ -167,6 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
+  
   topGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',

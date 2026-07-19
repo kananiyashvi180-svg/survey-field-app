@@ -27,14 +27,16 @@ export default function PreviewScreen() {
   const handleSubmit = () => {
     Alert.alert('Submit Survey', 'Are you sure you want to submit?', [
       { text: 'Cancel' },
-      { text: 'Submit', onPress: () => {
-        const now = new Date().toLocaleString();
-        const updated = { ...survey, status: 'Submitted', submittedAt: now };
-        const idx = surveyStore.findIndex(s => s.id === survey.id);
-        if (idx !== -1) surveyStore[idx] = updated;
-        setSurvey(updated);
-        setShowSuccessModal(true);
-      }},
+      {
+        text: 'Submit', onPress: () => {
+          const now = new Date().toLocaleString();
+          const updated = { ...survey, status: 'Submitted', submittedAt: now };
+          const idx = surveyStore.findIndex(s => s.id === survey.id);
+          if (idx !== -1) surveyStore[idx] = updated;
+          setSurvey(updated);
+          setShowSuccessModal(true);
+        }
+      },
     ]);
   };
 
