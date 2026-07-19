@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  TextInput,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
+  StyleSheet, Text, View, FlatList, TextInput,
+  Pressable, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import * as Clipboard from 'expo-clipboard';
@@ -16,19 +9,16 @@ import * as Clipboard from 'expo-clipboard';
 function getInitials(name) {
   if (!name) return '?';
   const parts = name.trim().split(' ');
-  if (parts.length > 1) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return parts[0][0].toUpperCase();
+  return parts.length > 1
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : parts[0][0].toUpperCase();
 }
 
 function avatarColor(name) {
   if (!name) return '#f97316';
-  const colors = ['#f97316', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444'];
+  const colors = ['#0ea5e9', '#f97316', '#a855f7', '#22c55e', '#ef4444'];
   let sum = 0;
-  for (let i = 0; i < name.length; i++) {
-    sum += name.charCodeAt(i);
-  }
+  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
   return colors[sum % colors.length];
 }
 
@@ -38,19 +28,15 @@ export default function ContactsScreen() {
   const [filtered, setFiltered] = useState([]);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     const checkPermission = async () => {
       try {
         const result = await Contacts.getPermissionsAsync();
         setPermission(result);
-        if (result.granted) {
-          loadContacts();
-        }
-      } catch (_err) {
-        setPermission({ granted: false });
-      }
+        if (result.granted) loadContacts();
+      } catch (_err) { setPermission({ granted: false }); }
     };
-
     if (typeof document !== 'undefined') {
       setPermission({ granted: false, webPlatform: true });
     } else {
@@ -62,54 +48,30 @@ export default function ContactsScreen() {
     try {
       const result = await Contacts.requestPermissionsAsync();
       setPermission(result);
-      if (result.granted) {
-        loadContacts();
-      } else {
-        Alert.alert('Permission Denied', 'Contacts access is required to display contacts.');
-      }
-    } catch (_err) {
-      Alert.alert('Error', 'Failed to request permission.');
-    }
+      if (result.granted) loadContacts();
+      else Alert.alert('Permission Denied', 'Contacts access is required.');
+    } catch (_err) { Alert.alert('Error', 'Failed to request permission.'); }
   };
 
   const loadContacts = async () => {
     try {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-      });
+      const { data } = await Contacts.getContactsAsync({ fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers] });
       const sorted = data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       setAllContacts(sorted);
       setFiltered(sorted);
       setQuery('');
-    } catch (_err) {
-      Alert.alert('Error', 'Failed to load contacts.');
-    }
+    } catch (_err) { Alert.alert('Error', 'Failed to load contacts.'); }
   };
 
   const handleSearch = (text) => {
     setQuery(text);
     const q = text.toLowerCase().trim();
-    if (!q) {
-      setFiltered(allContacts);
-      return;
-    }
-    const temp = [];
-    for (let i = 0; i < allContacts.length; i++) {
-      const c = allContacts[i];
+    if (!q) { setFiltered(allContacts); return; }
+    setFiltered(allContacts.filter(c => {
       const matchName = c.name && c.name.toLowerCase().includes(q);
-      let matchNumber = false;
-      if (c.phoneNumbers) {
-        for (let j = 0; j < c.phoneNumbers.length; j++) {
-          if (c.phoneNumbers[j].number && c.phoneNumbers[j].number.includes(q)) {
-            matchNumber = true;
-          }
-        }
-      }
-      if (matchName || matchNumber) {
-        temp.push(c);
-      }
-    }
-    setFiltered(temp);
+      const matchNum = c.phoneNumbers && c.phoneNumbers.some(p => p.number && p.number.includes(q));
+      return matchName || matchNum;
+    }));
   };
 
   const handleRefresh = async () => {
@@ -121,7 +83,7 @@ export default function ContactsScreen() {
   if (!permission) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#f97316" />
+        <ActivityIndicator size="large" color="#0ea5e9" />
         <Text style={styles.loadingText}>Checking permissions...</Text>
       </View>
     );
@@ -130,12 +92,11 @@ export default function ContactsScreen() {
   if (typeof document !== 'undefined') {
     return (
       <View style={styles.centeredContainer}>
-        <Text style={styles.title}>Contacts</Text>
-        <Text style={styles.webMsg}>
-          Contacts access is not available in the web browser.
-        </Text>
-        <Text style={styles.webSubMsg}>
-          Please run this app on a real Android or iOS device to access your contacts.
+        <Text style={styles.permIcon}>👥</Text>
+        <Text style={styles.permTitle}>Contacts Unavailable</Text>
+        <Text style={styles.permSubtitle}>
+          Contacts access is not available in the web browser.{'\n'}
+          Run this app on a real device to sync contacts.
         </Text>
       </View>
     );
@@ -144,10 +105,11 @@ export default function ContactsScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.centeredContainer}>
-        <Text style={styles.title}>Contacts Access Required</Text>
-        <Text style={styles.text}>Allow access to load your contacts.</Text>
-        <Pressable style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Grant Contacts Access</Text>
+        <Text style={styles.permIcon}>👥</Text>
+        <Text style={styles.permTitle}>Contacts Access Required</Text>
+        <Text style={styles.permSubtitle}>Allow access to load and sync your contacts.</Text>
+        <Pressable style={styles.btnPrimary} onPress={requestPermission}>
+          <Text style={styles.btnPrimaryText}>Grant Contacts Access</Text>
         </Pressable>
       </View>
     );
@@ -155,44 +117,54 @@ export default function ContactsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerCard}>
-        <Text style={styles.title}>Contacts</Text>
-        <Text style={styles.countText}>{allContacts.length} contacts</Text>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageIcon}>👥</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pageTitle}>Contacts</Text>
+          <Text style={styles.pageSubtitle}>{allContacts.length} contacts synced</Text>
+        </View>
       </View>
 
+      {/* Search */}
       <View style={styles.searchCard}>
+        <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
           value={query}
           onChangeText={handleSearch}
           placeholder="Search by name or number..."
-          placeholderTextColor="#6b7280"
+          placeholderTextColor="#4b5563"
         />
       </View>
 
+      {/* Contact List */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id || item.name}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyTitle}>No contacts found</Text>
+            <Text style={styles.emptyText}>Pull down to refresh your contacts list.</Text>
+          </View>
+        }
         renderItem={({ item }) => {
           const name = item.name || 'Unknown';
-          const number =
-            item.phoneNumbers && item.phoneNumbers[0] ? item.phoneNumbers[0].number : null;
-          const initials = getInitials(name);
-          const bgColor = avatarColor(name);
+          const number = item.phoneNumbers && item.phoneNumbers[0] ? item.phoneNumbers[0].number : null;
 
           const handleCopy = async () => {
-            if (!number) {
-              Alert.alert('No Number', 'This contact has no phone number.');
-              return;
-            }
+            if (!number) { Alert.alert('No Number', 'This contact has no phone number.'); return; }
             await Clipboard.setStringAsync(number);
-            Alert.alert('Copied', number + ' copied to clipboard.');
+            Alert.alert('✅ Copied', number + ' copied to clipboard.');
           };
 
           return (
-            <View style={styles.contactRow}>
-              <View style={[styles.avatar, { backgroundColor: bgColor }]}>
-                <Text style={styles.avatarText}>{initials}</Text>
+            <View style={styles.contactCard}>
+              <View style={[styles.avatar, { backgroundColor: avatarColor(name) + '33' }]}>
+                <Text style={[styles.avatarText, { color: avatarColor(name) }]}>{getInitials(name)}</Text>
               </View>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactName}>{name}</Text>
@@ -204,154 +176,37 @@ export default function ContactsScreen() {
             </View>
           );
         }}
-        ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No contacts found.</Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  centeredContainer: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  headerCard: {
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    color: '#f97316',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  countText: {
-    color: '#9ca3af',
-    fontSize: 14,
-  },
-  loadingText: {
-    color: '#9ca3af',
-    fontSize: 15,
-    marginTop: 14,
-  },
-  text: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  webMsg: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    marginTop: 15,
-  },
-  webSubMsg: {
-    color: '#9ca3af',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 10,
-  },
-  searchCard: {
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 6,
-  },
-  searchInput: {
-    backgroundColor: '#0b0d12',
-    color: '#f1f5f9',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    marginVertical: 6,
-    padding: 16,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  contactInfo: {
-    flex: 1,
-  },
-  contactName: {
-    color: '#f1f5f9',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  contactNumber: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  copyBtn: {
-    backgroundColor: '#f97316',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  copyBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    width: 220,
-    marginTop: 10,
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  emptyCard: {
-    padding: 30,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#9ca3af',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: '#0b0d12', paddingHorizontal: 16, paddingTop: 16 },
+  centeredContainer: { flex: 1, backgroundColor: '#0b0d12', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { color: '#9ca3af', fontSize: 14, marginTop: 12 },
+  permIcon: { fontSize: 48, marginBottom: 12 },
+  permTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
+  permSubtitle: { color: '#9ca3af', fontSize: 14, marginBottom: 20, textAlign: 'center', lineHeight: 22 },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  pageIcon: { fontSize: 28, marginRight: 12 },
+  pageTitle: { color: '#ffffff', fontSize: 22, fontWeight: 'bold' },
+  pageSubtitle: { color: '#9ca3af', fontSize: 13, marginTop: 2 },
+  searchCard: { backgroundColor: '#151821', borderRadius: 12, padding: 12, marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, backgroundColor: '#0b0d12', color: '#ffffff', padding: 10, borderRadius: 8, fontSize: 14, borderWidth: 1, borderColor: '#1e293b' },
+  contactCard: { backgroundColor: '#151821', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarText: { fontSize: 15, fontWeight: 'bold' },
+  contactInfo: { flex: 1 },
+  contactName: { color: '#ffffff', fontSize: 15, fontWeight: 'bold', marginBottom: 2 },
+  contactNumber: { color: '#9ca3af', fontSize: 13 },
+  copyBtn: { backgroundColor: '#0ea5e922', paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8 },
+  copyBtnText: { color: '#0ea5e9', fontSize: 12, fontWeight: 'bold' },
+  emptyCard: { backgroundColor: '#151821', borderRadius: 12, padding: 32, alignItems: 'center', marginTop: 12 },
+  emptyIcon: { fontSize: 40, marginBottom: 12 },
+  emptyTitle: { color: '#ffffff', fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+  emptyText: { color: '#9ca3af', fontSize: 13, textAlign: 'center' },
+  btnPrimary: { backgroundColor: '#f97316', padding: 14, borderRadius: 10, alignItems: 'center', width: 220, marginTop: 8 },
+  btnPrimaryText: { color: '#ffffff', fontSize: 15, fontWeight: 'bold' },
 });

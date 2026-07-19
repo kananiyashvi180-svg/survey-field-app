@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState({
@@ -17,56 +9,52 @@ export default function SettingsScreen() {
     offlineSync: false,
     autoSaveDraft: true,
   });
-
   const [syncing, setSyncing] = useState(false);
 
-  const toggleSetting = (key) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const toggleSetting = (key) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleSync = () => {
     setSyncing(true);
     setTimeout(() => {
       setSyncing(false);
-      Alert.alert('Sync Complete', 'Reports synced successfully.');
+      Alert.alert('✅ Sync Complete', 'All reports synced successfully.');
     }, 2000);
   };
 
   const handleClearCache = () => {
-    Alert.alert(
-      'Clear Cache',
-      'This will delete cached maps and drafts. Proceed?',
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Clear',
-          onPress: () => {
-            Alert.alert('Success', 'Cache cleared successfully.');
-          },
-        },
-      ]
-    );
+    Alert.alert('Clear Cache', 'This will delete cached maps and drafts. Proceed?', [
+      { text: 'Cancel' },
+      { text: 'Clear', onPress: () => Alert.alert('✅ Cleared', 'Cache cleared successfully.') },
+    ]);
   };
 
   const settingRows = [
-    { key: 'darkMode', label: 'Dark Mode', desc: 'Use dark background theme' },
-    { key: 'notifications', label: 'Push Notifications', desc: 'Receive alerts for surveys' },
-    { key: 'gpsHighAccuracy', label: 'High Accuracy GPS', desc: 'Enable precise location tracking' },
-    { key: 'offlineSync', label: 'Offline Mode', desc: 'Save surveys locally when offline' },
-    { key: 'autoSaveDraft', label: 'Auto Save Draft', desc: 'Automatically save form drafts' },
+    { key: 'darkMode', label: 'Dark Mode', desc: 'Use high contrast dark theme', icon: '🌙' },
+    { key: 'notifications', label: 'Push Notifications', desc: 'Receive alerts for surveys', icon: '🔔' },
+    { key: 'gpsHighAccuracy', label: 'High Accuracy GPS', desc: 'Enable precise location tracking', icon: '📍' },
+    { key: 'offlineSync', label: 'Offline Mode', desc: 'Save surveys locally when offline', icon: '📡' },
+    { key: 'autoSaveDraft', label: 'Auto Save Draft', desc: 'Automatically save form drafts', icon: '💾' },
   ];
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.text}>Customize your application preferences.</Text>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageIcon}>⚙️</Text>
+        <View>
+          <Text style={styles.pageTitle}>Settings</Text>
+          <Text style={styles.pageSubtitle}>Customize your app preferences</Text>
+        </View>
       </View>
 
+      {/* Preferences Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Preferences</Text>
-        {settingRows.map((row) => (
-          <View key={row.key} style={styles.settingRow}>
+        <Text style={styles.cardLabel}>🎛️ Preferences</Text>
+        {settingRows.map((row, idx) => (
+          <View key={row.key} style={[styles.settingRow, idx < settingRows.length - 1 && styles.settingRowBorder]}>
+            <View style={styles.settingIconBox}>
+              <Text style={styles.settingRowIcon}>{row.icon}</Text>
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>{row.label}</Text>
               <Text style={styles.settingDesc}>{row.desc}</Text>
@@ -75,117 +63,86 @@ export default function SettingsScreen() {
               style={settings[row.key] ? styles.toggleOn : styles.toggleOff}
               onPress={() => toggleSetting(row.key)}
             >
-              <Text style={styles.toggleText}>{settings[row.key] ? 'ON' : 'OFF'}</Text>
+              <Text style={settings[row.key] ? styles.toggleTextOn : styles.toggleTextOff}>
+                {settings[row.key] ? 'ON' : 'OFF'}
+              </Text>
             </Pressable>
           </View>
         ))}
       </View>
 
+      {/* System Actions Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>System Actions</Text>
-        <Pressable style={styles.btn} onPress={handleSync} disabled={syncing}>
-          {syncing ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.btnText}>Sync Data Now</Text>
-          )}
+        <Text style={styles.cardLabel}>🛠️ System Actions</Text>
+        <Pressable style={styles.actionRow} onPress={handleSync} disabled={syncing}>
+          <View style={[styles.settingIconBox, { backgroundColor: '#0ea5e922' }]}>
+            <Text style={styles.settingRowIcon}>🔄</Text>
+          </View>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>Sync Data Now</Text>
+            <Text style={styles.settingDesc}>Upload all pending survey data</Text>
+          </View>
+          {syncing
+            ? <ActivityIndicator size="small" color="#0ea5e9" />
+            : <Text style={styles.actionArrow}>›</Text>
+          }
         </Pressable>
-        <Pressable style={styles.btnSecondary} onPress={handleClearCache}>
-          <Text style={styles.btnText}>Clear Local Cache</Text>
+
+        <View style={styles.settingRowBorder} />
+
+        <Pressable style={styles.actionRow} onPress={handleClearCache}>
+          <View style={[styles.settingIconBox, { backgroundColor: '#ef444422' }]}>
+            <Text style={styles.settingRowIcon}>🗑️</Text>
+          </View>
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: '#ef4444' }]}>Clear Local Cache</Text>
+            <Text style={styles.settingDesc}>Delete cached maps and drafts</Text>
+          </View>
+          <Text style={[styles.actionArrow, { color: '#ef4444' }]}>›</Text>
         </Pressable>
+      </View>
+
+      {/* About Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>ℹ️ About</Text>
+        {[
+          ['App Name', 'Smart Field Survey'],
+          ['Version', '1.0.0'],
+          ['Assignment', 'Mini Project'],
+          ['Platform', 'React Native (Expo)'],
+        ].map(([label, value]) => (
+          <View key={label} style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{label}</Text>
+            <Text style={styles.infoValue}>{value}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  card: {
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-  },
-  title: {
-    color: '#f97316',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  text: {
-    color: '#9ca3af',
-    fontSize: 14,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0b0d12',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  settingLabel: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  settingDesc: {
-    color: '#9ca3af',
-    fontSize: 12,
-  },
-  toggleOn: {
-    backgroundColor: '#f97316',
-    padding: 10,
-    borderRadius: 8,
-    width: 65,
-    alignItems: 'center',
-  },
-  toggleOff: {
-    backgroundColor: '#374151',
-    padding: 10,
-    borderRadius: 8,
-    width: 65,
-    alignItems: 'center',
-  },
-  toggleText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 14,
-    marginVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  btnSecondary: {
-    backgroundColor: '#374151',
-    padding: 14,
-    marginVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#0b0d12', paddingHorizontal: 16, paddingTop: 16 },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  pageIcon: { fontSize: 28, marginRight: 12 },
+  pageTitle: { color: '#ffffff', fontSize: 22, fontWeight: 'bold' },
+  pageSubtitle: { color: '#9ca3af', fontSize: 13, marginTop: 2 },
+  card: { backgroundColor: '#151821', borderRadius: 12, padding: 16, marginBottom: 12 },
+  cardLabel: { color: '#0ea5e9', fontSize: 12, fontWeight: 'bold', marginBottom: 14 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  settingRowBorder: { borderBottomWidth: 1, borderBottomColor: '#0b0d12' },
+  settingIconBox: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#0b0d12', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  settingRowIcon: { fontSize: 16 },
+  settingInfo: { flex: 1, marginRight: 12 },
+  settingLabel: { color: '#ffffff', fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
+  settingDesc: { color: '#9ca3af', fontSize: 12 },
+  toggleOn: { backgroundColor: '#1cbdddff', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, minWidth: 52, alignItems: 'center' },
+  toggleOff: { backgroundColor: '#0b0d12', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, minWidth: 52, alignItems: 'center', borderWidth: 1, borderColor: '#1e293b' },
+  toggleTextOn: { color: '#ffffff', fontSize: 12, fontWeight: 'bold' },
+  toggleTextOff: { color: '#9ca3af', fontSize: 12, fontWeight: 'bold' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  actionArrow: { color: '#9ca3af', fontSize: 22, fontWeight: 'bold' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#0b0d12' },
+  infoLabel: { color: '#9ca3af', fontSize: 13 },
+  infoValue: { color: '#ffffff', fontSize: 13, fontWeight: 'bold' },
 });

@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Image,
-  StyleSheet,
-  Alert,
-  Modal,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { surveyStore } from './Survey';
 
@@ -21,69 +11,41 @@ export default function PreviewScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
-    if (surveyStore.length > 0) {
-      setSurvey({ ...surveyStore[0] });
-    }
+    if (surveyStore.length > 0) setSurvey({ ...surveyStore[0] });
   }, []);
 
-  const handleEdit = () => {
-    setEditDraft({ ...survey });
-    setIsEditing(true);
-  };
-
-  const handleCancelEdit = () => {
-    setEditDraft(null);
-    setIsEditing(false);
-  };
-
   const handleSaveEdit = () => {
-    if (!editDraft.siteName.trim()) {
-      Alert.alert('Validation Error', 'Site Name cannot be empty.');
-      return;
-    }
-    if (!editDraft.clientName.trim()) {
-      Alert.alert('Validation Error', 'Client Name cannot be empty.');
-      return;
-    }
-    const idx = surveyStore.findIndex((s) => s.id === editDraft.id);
-    if (idx !== -1) {
-      surveyStore[idx] = { ...editDraft };
-    }
+    if (!editDraft.siteName.trim()) { Alert.alert('Error', 'Site Name cannot be empty.'); return; }
+    if (!editDraft.clientName.trim()) { Alert.alert('Error', 'Client Name cannot be empty.'); return; }
+    const idx = surveyStore.findIndex(s => s.id === editDraft.id);
+    if (idx !== -1) surveyStore[idx] = { ...editDraft };
     setSurvey({ ...editDraft });
     setIsEditing(false);
     setEditDraft(null);
   };
 
   const handleSubmit = () => {
-    Alert.alert(
-      'Submit Survey',
-      'Are you sure you want to submit this survey?',
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Submit',
-          onPress: () => {
-            const now = new Date().toLocaleString();
-            const updated = { ...survey, status: 'Submitted', submittedAt: now };
-            const idx = surveyStore.findIndex((s) => s.id === survey.id);
-            if (idx !== -1) {
-              surveyStore[idx] = updated;
-            }
-            setSurvey(updated);
-            setShowSuccessModal(true);
-          },
-        },
-      ]
-    );
+    Alert.alert('Submit Survey', 'Are you sure you want to submit?', [
+      { text: 'Cancel' },
+      { text: 'Submit', onPress: () => {
+        const now = new Date().toLocaleString();
+        const updated = { ...survey, status: 'Submitted', submittedAt: now };
+        const idx = surveyStore.findIndex(s => s.id === survey.id);
+        if (idx !== -1) surveyStore[idx] = updated;
+        setSurvey(updated);
+        setShowSuccessModal(true);
+      }},
+    ]);
   };
 
   if (!survey) {
     return (
-      <View style={styles.emptyContainer}>
+      <View style={styles.centeredContainer}>
+        <Text style={styles.emptyIcon}>📋</Text>
         <Text style={styles.emptyTitle}>No Survey to Preview</Text>
-        <Text style={styles.emptyText}>Create a survey first to see it here.</Text>
-        <Pressable style={styles.btn} onPress={() => router.push('/Survey')}>
-          <Text style={styles.btnText}>Create Survey</Text>
+        <Text style={styles.emptySubtext}>Create a survey first to see a preview here.</Text>
+        <Pressable style={styles.btnPrimary} onPress={() => router.push('/Survey')}>
+          <Text style={styles.btnPrimaryText}>📝 Create Survey</Text>
         </Pressable>
       </View>
     );
@@ -92,159 +54,161 @@ export default function PreviewScreen() {
   if (isEditing && editDraft) {
     return (
       <ScrollView style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Edit Survey</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageIcon}>✏️</Text>
+          <View>
+            <Text style={styles.pageTitle}>Edit Survey</Text>
+            <Text style={styles.pageSubtitle}>Update the survey details</Text>
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Site Name *</Text>
+          <Text style={styles.cardLabel}>📋 Survey Details</Text>
+          {[
+            ['Site Name *', 'siteName', 'e.g. Metro Station'],
+            ['Client Name *', 'clientName', 'e.g. City Infrastructure'],
+            ['Description', 'description', 'Brief description...'],
+            ['Priority', 'priority', 'Low / Medium / High'],
+            ['Survey Date', 'date', 'DD/MM/YYYY'],
+          ].map(([label, key, placeholder]) => (
+            <View key={key}>
+              <Text style={styles.fieldLabel}>{label}</Text>
+              <TextInput
+                style={styles.input}
+                value={editDraft[key]}
+                onChangeText={(v) => setEditDraft({ ...editDraft, [key]: v })}
+                placeholder={placeholder}
+                placeholderTextColor="#4b5563"
+              />
+            </View>
+          ))}
+          <Text style={styles.fieldLabel}>Field Notes</Text>
           <TextInput
-            style={styles.input}
-            value={editDraft.siteName}
-            onChangeText={(v) => setEditDraft({ ...editDraft, siteName: v })}
-          />
-
-          <Text style={styles.label}>Client Name *</Text>
-          <TextInput
-            style={styles.input}
-            value={editDraft.clientName}
-            onChangeText={(v) => setEditDraft({ ...editDraft, clientName: v })}
-          />
-
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={styles.input}
-            value={editDraft.description}
-            onChangeText={(v) => setEditDraft({ ...editDraft, description: v })}
-            multiline
-            numberOfLines={3}
-          />
-
-          <Text style={styles.label}>Priority</Text>
-          <TextInput
-            style={styles.input}
-            value={editDraft.priority}
-            onChangeText={(v) => setEditDraft({ ...editDraft, priority: v })}
-          />
-
-          <Text style={styles.label}>Survey Date</Text>
-          <TextInput
-            style={styles.input}
-            value={editDraft.date}
-            onChangeText={(v) => setEditDraft({ ...editDraft, date: v })}
-          />
-
-          <Text style={styles.label}>Field Notes</Text>
-          <TextInput
-            style={styles.input}
+            style={[styles.input, styles.textArea]}
             value={editDraft.notes}
             onChangeText={(v) => setEditDraft({ ...editDraft, notes: v })}
+            placeholder="Additional notes..."
+            placeholderTextColor="#4b5563"
             multiline
             numberOfLines={3}
           />
+        </View>
 
-          <View style={styles.btnRow}>
-            <Pressable style={styles.btnSecondary} onPress={handleCancelEdit}>
-              <Text style={styles.btnText}>Cancel</Text>
-            </Pressable>
-            <Pressable style={styles.btn} onPress={handleSaveEdit}>
-              <Text style={styles.btnText}>Save Changes</Text>
-            </Pressable>
-          </View>
+        <View style={styles.btnRow}>
+          <Pressable style={styles.btnSecondary} onPress={() => { setIsEditing(false); setEditDraft(null); }}>
+            <Text style={styles.btnSecondaryText}>Cancel</Text>
+          </Pressable>
+          <Pressable style={styles.btnPrimary} onPress={handleSaveEdit}>
+            <Text style={styles.btnPrimaryText}>💾 Save Changes</Text>
+          </Pressable>
         </View>
       </ScrollView>
     );
   }
 
+  const statusColor = survey.status === 'Submitted' ? '#22c55e' : '#f97316';
+
   return (
     <ScrollView style={styles.container}>
+      {/* Success Modal */}
       <Modal transparent visible={showSuccessModal} animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.card}>
-            <Text style={styles.title}>Survey Submitted!</Text>
-            <Text style={styles.text}>Survey submitted successfully.</Text>
-            <Pressable
-              style={styles.btn}
-              onPress={() => {
-                setShowSuccessModal(false);
-                router.push('/(drawer)/(tabs)/Dashboard');
-              }}
-            >
-              <Text style={styles.btnText}>Back to Dashboard</Text>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalIcon}>✅</Text>
+            <Text style={styles.modalTitle}>Survey Submitted!</Text>
+            <Text style={styles.modalSubtitle}>Survey successfully submitted and recorded.</Text>
+            <Pressable style={styles.btnPrimary} onPress={() => { setShowSuccessModal(false); router.push('/Dashboard'); }}>
+              <Text style={styles.btnPrimaryText}>Back to Dashboard</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
 
-      <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Survey Preview</Text>
-          <Text style={[
-            styles.statusBadge,
-            survey.status === 'Submitted' ? styles.statusSubmitted : styles.statusPending,
-          ]}>
-            {survey.status}
-          </Text>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageIcon}>👁️</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pageTitle}>Survey Preview</Text>
+          <Text style={styles.pageSubtitle}>Review before submitting</Text>
         </View>
-        <Text style={styles.text}>ID: {survey.id}</Text>
-        {survey.submittedAt ? (
-          <Text style={styles.text}>Submitted: {survey.submittedAt}</Text>
-        ) : null}
+        <View style={[styles.statusBadge, { backgroundColor: statusColor + '22' }]}>
+          <Text style={[styles.statusBadgeText, { color: statusColor }]}>{survey.status}</Text>
+        </View>
       </View>
 
+      {/* Survey ID Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Site Details</Text>
-        <Text style={styles.text}>Site Name: {survey.siteName}</Text>
-        <Text style={styles.text}>Client: {survey.clientName}</Text>
-        <Text style={styles.text}>Date: {survey.date}</Text>
-        <Text style={styles.text}>Priority: {survey.priority}</Text>
-        <Text style={styles.text}>Description: {survey.description}</Text>
+        <Text style={styles.cardLabel}>🆔 Survey ID</Text>
+        <Text style={styles.idText}>{survey.id}</Text>
+        {survey.submittedAt && <Text style={styles.bodyText}>Submitted: {survey.submittedAt}</Text>}
       </View>
 
+      {/* Site Details Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Site Photo</Text>
-        {survey.photo ? (
-          <Image source={{ uri: survey.photo }} style={styles.image} />
-        ) : (
-          <Text style={styles.mutedText}>No photo attached. Go to Camera to add a photo.</Text>
-        )}
+        <Text style={styles.cardLabel}>📋 Site Details</Text>
+        {[
+          ['Site Name', survey.siteName],
+          ['Client', survey.clientName],
+          ['Date', survey.date],
+          ['Priority', survey.priority],
+          ['Description', survey.description],
+        ].map(([label, value]) => (
+          <View key={label} style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{label}</Text>
+            <Text style={styles.detailValue}>{value}</Text>
+          </View>
+        ))}
       </View>
 
+      {/* Site Photo Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Location</Text>
+        <Text style={styles.cardLabel}>📷 Site Photo</Text>
+        {survey.photo
+          ? <Image source={{ uri: survey.photo }} style={styles.image} />
+          : <Text style={styles.mutedText}>No photo attached. Go to Camera to add a photo.</Text>
+        }
+      </View>
+
+      {/* Location Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>📍 Location</Text>
         {survey.location ? (
           <View>
-            <Text style={styles.text}>Latitude: {survey.location.latitude}</Text>
-            <Text style={styles.text}>Longitude: {survey.location.longitude}</Text>
-            {survey.location.accuracy ? (
-              <Text style={styles.text}>Accuracy: {survey.location.accuracy}m</Text>
-            ) : null}
+            {[
+              ['Latitude', survey.location.latitude],
+              ['Longitude', survey.location.longitude],
+              ...(survey.location.accuracy ? [['Accuracy', survey.location.accuracy + ' m']] : []),
+            ].map(([label, value]) => (
+              <View key={label} style={styles.coordRow}>
+                <Text style={styles.coordLabel}>{label}</Text>
+                <Text style={styles.coordValue}>{value}</Text>
+              </View>
+            ))}
           </View>
-        ) : (
-          <Text style={styles.mutedText}>No location recorded. Go to Location to capture GPS.</Text>
-        )}
+        ) : <Text style={styles.mutedText}>No location recorded. Go to Location to capture GPS.</Text>}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Field Notes</Text>
-        <Text style={styles.text}>{survey.notes || 'No notes added.'}</Text>
-      </View>
+      {/* Notes Card */}
+      {survey.notes ? (
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>📝 Field Notes</Text>
+          <Text style={styles.bodyText}>{survey.notes}</Text>
+        </View>
+      ) : null}
 
+      {/* Action Buttons */}
       {survey.status !== 'Submitted' ? (
         <View style={styles.btnRow}>
-          <Pressable style={styles.btnSecondary} onPress={handleEdit}>
-            <Text style={styles.btnText}>Edit Survey</Text>
+          <Pressable style={styles.btnSecondary} onPress={() => { setEditDraft({ ...survey }); setIsEditing(true); }}>
+            <Text style={styles.btnSecondaryText}>✏️ Edit</Text>
           </Pressable>
-          <Pressable style={styles.btn} onPress={handleSubmit}>
-            <Text style={styles.btnText}>Submit Survey</Text>
+          <Pressable style={styles.btnPrimary} onPress={handleSubmit}>
+            <Text style={styles.btnPrimaryText}>✅ Submit Survey</Text>
           </Pressable>
         </View>
       ) : (
-        <Pressable
-          style={styles.btn}
-          onPress={() => router.push('/(drawer)/(tabs)/Dashboard')}
-        >
-          <Text style={styles.btnText}>Back to Dashboard</Text>
+        <Pressable style={[styles.btnSecondary, { marginBottom: 40 }]} onPress={() => router.push('/Dashboard')}>
+          <Text style={styles.btnSecondaryText}>← Back to Dashboard</Text>
         </Pressable>
       )}
     </ScrollView>
@@ -252,127 +216,40 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-  },
-  emptyTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptyText: {
-    color: '#9ca3af',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    color: '#f97316',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  label: {
-    color: '#9ca3af',
-    fontSize: 13,
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  text: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  mutedText: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  input: {
-    backgroundColor: '#0b0d12',
-    color: '#ffffff',
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  statusBadge: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    padding: 5,
-    borderRadius: 6,
-  },
-  statusSubmitted: {
-    color: '#22c55e',
-    backgroundColor: '#14532d',
-  },
-  statusPending: {
-    color: '#f97316',
-    backgroundColor: '#431407',
-  },
-  btnRow: {
-    flexDirection: 'row',
-    marginVertical: 10,
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 14,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnSecondary: {
-    backgroundColor: '#374151',
-    padding: 14,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  image: {
-    width: '100%',
-    height: 220,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000000aa',
-    padding: 20,
-  },
+  container: { flex: 1, backgroundColor: '#0b0d12', paddingHorizontal: 16, paddingTop: 16 },
+  centeredContainer: { flex: 1, backgroundColor: '#0b0d12', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
+  emptySubtext: { color: '#9ca3af', fontSize: 14, textAlign: 'center', marginBottom: 20 },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  pageIcon: { fontSize: 28, marginRight: 12 },
+  pageTitle: { color: '#ffffff', fontSize: 22, fontWeight: 'bold' },
+  pageSubtitle: { color: '#9ca3af', fontSize: 13, marginTop: 2 },
+  card: { backgroundColor: '#151821', borderRadius: 12, padding: 16, marginBottom: 12 },
+  cardLabel: { color: '#0ea5e9', fontSize: 12, fontWeight: 'bold', marginBottom: 12 },
+  idText: { color: '#f97316', fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  bodyText: { color: '#9ca3af', fontSize: 13, lineHeight: 20 },
+  mutedText: { color: '#9ca3af', fontSize: 13 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#0b0d12' },
+  detailLabel: { color: '#9ca3af', fontSize: 13, flex: 1 },
+  detailValue: { color: '#ffffff', fontSize: 13, fontWeight: 'bold', flex: 1.5, textAlign: 'right' },
+  coordRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#0b0d12', borderRadius: 8, padding: 10, marginBottom: 6 },
+  coordLabel: { color: '#9ca3af', fontSize: 13 },
+  coordValue: { color: '#f97316', fontSize: 13, fontWeight: 'bold' },
+  statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  statusBadgeText: { fontSize: 12, fontWeight: 'bold' },
+  image: { width: '100%', height: 220, borderRadius: 8 },
+  fieldLabel: { color: '#9ca3af', fontSize: 13, fontWeight: 'bold', marginTop: 12, marginBottom: 5 },
+  input: { backgroundColor: '#0b0d12', color: '#ffffff', padding: 12, borderRadius: 8, fontSize: 14, borderWidth: 1, borderColor: '#1e293b' },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
+  btnRow: { flexDirection: 'row', marginVertical: 10, marginBottom: 16 },
+  btnPrimary: { backgroundColor: '#f97316', padding: 14, borderRadius: 10, alignItems: 'center', flex: 1, marginLeft: 6 },
+  btnPrimaryText: { color: '#ffffff', fontSize: 15, fontWeight: 'bold' },
+  btnSecondary: { backgroundColor: '#151821', padding: 14, borderRadius: 10, alignItems: 'center', flex: 1, marginRight: 6, borderWidth: 1, borderColor: '#1e293b' },
+  btnSecondaryText: { color: '#9ca3af', fontSize: 15, fontWeight: 'bold' },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000bb', padding: 24 },
+  modalCard: { backgroundColor: '#151821', borderRadius: 16, padding: 24, width: '100%', alignItems: 'center' },
+  modalIcon: { fontSize: 48, marginBottom: 12 },
+  modalTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
+  modalSubtitle: { color: '#9ca3af', fontSize: 14, textAlign: 'center', marginBottom: 20 },
 });

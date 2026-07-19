@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Location from 'expo-location';
 
@@ -20,59 +11,36 @@ export default function ClipboardScreen() {
   const [history, setHistory] = useState([]);
 
   const addToHistory = (label, value) => {
-    const newItem = {
-      id: Date.now().toString(),
-      label: label,
-      value: value,
-      time: new Date().toLocaleTimeString(),
-    };
-    setHistory((prev) => [newItem, ...prev.slice(0, 9)]);
+    const item = { id: Date.now().toString(), label, value, time: new Date().toLocaleTimeString() };
+    setHistory((prev) => [item, ...prev.slice(0, 9)]);
   };
 
   const handleCopyText = async () => {
-    if (!textInput.trim()) {
-      Alert.alert('Empty', 'Please enter some text to copy.');
-      return;
-    }
+    if (!textInput.trim()) { Alert.alert('Empty', 'Please enter text to copy.'); return; }
     await Clipboard.setStringAsync(textInput.trim());
     addToHistory('Text', textInput.trim());
-    Alert.alert('Copied', 'Text copied to clipboard.');
+    Alert.alert('✅ Copied', 'Text copied to clipboard.');
   };
 
   const handlePaste = async () => {
     try {
       const text = await Clipboard.getStringAsync();
-      if (!text) {
-        Alert.alert('Clipboard Empty', 'Nothing to paste.');
-        return;
-      }
+      if (!text) { Alert.alert('Empty', 'Nothing to paste.'); return; }
       setPastedText(text);
       setTextInput(text);
-      Alert.alert('Pasted', 'Text pasted from clipboard.');
-    } catch (_err) {
-      Alert.alert('Error', 'Could not read clipboard.');
-    }
+    } catch (_err) { Alert.alert('Error', 'Could not read clipboard.'); }
   };
 
   const handleClear = () => {
-    Alert.alert(
-      'Clear',
-      'Clear the text and history?',
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Clear',
-          onPress: async () => {
-            await Clipboard.setStringAsync('');
-            setTextInput('');
-            setPastedText('');
-            setLocationStr('');
-            setHistory([]);
-            Alert.alert('Cleared', 'Clipboard and history cleared.');
-          },
-        },
-      ]
-    );
+    Alert.alert('Clear All', 'Clear the text input and history?', [
+      { text: 'Cancel' },
+      {
+        text: 'Clear', onPress: async () => {
+          await Clipboard.setStringAsync('');
+          setTextInput(''); setPastedText(''); setLocationStr(''); setHistory([]);
+        }
+      },
+    ]);
   };
 
   const handleCopyLocation = async () => {
@@ -81,102 +49,92 @@ export default function ClipboardScreen() {
       if (typeof document !== 'undefined' && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
-            const str =
-              'Lat: ' +
-              pos.coords.latitude.toFixed(6) +
-              ', Lon: ' +
-              pos.coords.longitude.toFixed(6);
+            const str = 'Lat: ' + pos.coords.latitude.toFixed(6) + ', Lon: ' + pos.coords.longitude.toFixed(6);
             setLocationStr(str);
             await Clipboard.setStringAsync(str);
             addToHistory('Location', str);
-            Alert.alert('Copied', 'Location copied:\n' + str);
+            Alert.alert('✅ Copied', str);
             setLocationLoading(false);
           },
-          (_err) => {
-            Alert.alert('Error', 'Could not get location. Allow browser location access.');
-            setLocationLoading(false);
-          },
+          (_err) => { Alert.alert('Error', 'Could not get location.'); setLocationLoading(false); },
           { enableHighAccuracy: true, timeout: 10000 }
         );
         return;
       }
-
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location access is required.');
-        setLocationLoading(false);
-        return;
-      }
+      if (status !== 'granted') { Alert.alert('Permission Denied', 'Location access required.'); setLocationLoading(false); return; }
       const loc = await Location.getCurrentPositionAsync({});
-      const str =
-        'Lat: ' +
-        loc.coords.latitude.toFixed(6) +
-        ', Lon: ' +
-        loc.coords.longitude.toFixed(6);
+      const str = 'Lat: ' + loc.coords.latitude.toFixed(6) + ', Lon: ' + loc.coords.longitude.toFixed(6);
       setLocationStr(str);
       await Clipboard.setStringAsync(str);
       addToHistory('Location', str);
-      Alert.alert('Copied', 'Location copied:\n' + str);
-    } catch (_err) {
-      Alert.alert('Error', 'Could not get location.');
-    }
+      Alert.alert('✅ Copied', str);
+    } catch (_err) { Alert.alert('Error', 'Could not get location.'); }
     setLocationLoading(false);
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Clipboard Manager</Text>
-        <Text style={styles.text}>Copy, paste, and manage field data.</Text>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageIcon}>📋</Text>
+        <View>
+          <Text style={styles.pageTitle}>Clipboard</Text>
+          <Text style={styles.pageSubtitle}>Copy, paste and manage field data</Text>
+        </View>
       </View>
 
+      {/* Text Copy / Paste Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Text Copy / Paste</Text>
+        <Text style={styles.cardLabel}>✏️ Text Input</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, styles.textArea]}
           placeholder="Type or paste text here..."
-          placeholderTextColor="#6b7280"
+          placeholderTextColor="#4b5563"
           value={textInput}
           onChangeText={setTextInput}
           multiline
           numberOfLines={3}
         />
-        <View style={styles.btnRow}>
-          <Pressable style={styles.btn} onPress={handleCopyText}>
-            <Text style={styles.btnText}>Copy</Text>
-          </Pressable>
-          <Pressable style={styles.btn} onPress={handlePaste}>
-            <Text style={styles.btnText}>Paste</Text>
-          </Pressable>
-          <Pressable style={styles.btnSecondary} onPress={handleClear}>
-            <Text style={styles.btnText}>Clear</Text>
-          </Pressable>
-        </View>
         {pastedText !== '' && (
           <View style={styles.pasteResult}>
-            <Text style={styles.mutedText}>Last pasted:</Text>
-            <Text style={styles.text}>{pastedText}</Text>
+            <Text style={styles.pasteLabel}>Last pasted:</Text>
+            <Text style={styles.pasteValue}>{pastedText}</Text>
           </View>
         )}
+        <View style={styles.btnRow}>
+          <Pressable style={styles.btnPrimary} onPress={handleCopyText}>
+            <Text style={styles.btnPrimaryText}>📋 Copy</Text>
+          </Pressable>
+          <Pressable style={styles.btnSecondary} onPress={handlePaste}>
+            <Text style={styles.btnSecondaryText}>📥 Paste</Text>
+          </Pressable>
+          <Pressable style={styles.btnDanger} onPress={handleClear}>
+            <Text style={styles.btnDangerText}>🗑️</Text>
+          </Pressable>
+        </View>
       </View>
 
+      {/* Location Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Copy Current Location</Text>
+        <Text style={styles.cardLabel}>📍 Copy Current Location</Text>
         {locationStr ? (
-          <Text style={styles.coordText}>{locationStr}</Text>
+          <View style={styles.coordDisplay}>
+            <Text style={styles.coordText}>{locationStr}</Text>
+          </View>
         ) : null}
-        <Pressable style={styles.btn} onPress={handleCopyLocation} disabled={locationLoading}>
-          {locationLoading ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.btnText}>Get & Copy Location</Text>
-          )}
+        <Pressable style={styles.btnPrimary} onPress={handleCopyLocation} disabled={locationLoading}>
+          {locationLoading
+            ? <ActivityIndicator size="small" color="#ffffff" />
+            : <Text style={styles.btnPrimaryText}>📍 Get & Copy Location</Text>
+          }
         </Pressable>
       </View>
 
+      {/* History Card */}
       <View style={styles.card}>
         <View style={styles.historyHeader}>
-          <Text style={styles.sectionTitle}>Copy History</Text>
+          <Text style={styles.cardLabel}>🕐 Copy History</Text>
           {history.length > 0 && (
             <Pressable onPress={handleClear}>
               <Text style={styles.clearLink}>Clear All</Text>
@@ -184,13 +142,13 @@ export default function ClipboardScreen() {
           )}
         </View>
         {history.length === 0 ? (
-          <Text style={styles.mutedText}>No items copied yet.</Text>
+          <Text style={styles.emptyText}>No items copied yet.</Text>
         ) : (
           history.map((item) => (
             <View key={item.id} style={styles.historyItem}>
               <View style={styles.historyLeft}>
                 <Text style={styles.historyLabel}>{item.label}</Text>
-                <Text style={styles.text}>{item.value}</Text>
+                <Text style={styles.historyValue} numberOfLines={2}>{item.value}</Text>
               </View>
               <Text style={styles.historyTime}>{item.time}</Text>
             </View>
@@ -202,116 +160,33 @@ export default function ClipboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b0d12',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  card: {
-    backgroundColor: '#151821',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-  },
-  title: {
-    color: '#f97316',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  text: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  mutedText: {
-    color: '#9ca3af',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  coordText: {
-    color: '#f97316',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  input: {
-    backgroundColor: '#0b0d12',
-    color: '#ffffff',
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 14,
-    marginBottom: 10,
-    minHeight: 80,
-  },
-  btnRow: {
-    flexDirection: 'row',
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 12,
-    margin: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnSecondary: {
-    backgroundColor: '#374151',
-    padding: 12,
-    margin: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  pasteResult: {
-    backgroundColor: '#0b0d12',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 8,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  clearLink: {
-    color: '#f97316',
-    fontSize: 13,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: '#0b0d12',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
-  },
-  historyLeft: {
-    flex: 1,
-    marginRight: 8,
-  },
-  historyLabel: {
-    color: '#f97316',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  historyTime: {
-    color: '#6b7280',
-    fontSize: 12,
-  },
+  container: { flex: 1, backgroundColor: '#0b0d12', paddingHorizontal: 16, paddingTop: 16 },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  pageIcon: { fontSize: 28, marginRight: 12 },
+  pageTitle: { color: '#ffffff', fontSize: 22, fontWeight: 'bold' },
+  pageSubtitle: { color: '#9ca3af', fontSize: 13, marginTop: 2 },
+  card: { backgroundColor: '#151821', borderRadius: 12, padding: 16, marginBottom: 12 },
+  cardLabel: { color: '#0ea5e9', fontSize: 12, fontWeight: 'bold', marginBottom: 12 },
+  input: { backgroundColor: '#0b0d12', color: '#ffffff', padding: 12, borderRadius: 8, fontSize: 14, borderWidth: 1, borderColor: '#1e293b' },
+  textArea: { minHeight: 90, textAlignVertical: 'top', marginBottom: 10 },
+  pasteResult: { backgroundColor: '#0b0d12', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#1e293b' },
+  pasteLabel: { color: '#9ca3af', fontSize: 11, marginBottom: 4 },
+  pasteValue: { color: '#ffffff', fontSize: 13 },
+  btnRow: { flexDirection: 'row', marginTop: 4 },
+  btnPrimary: { backgroundColor: '#1cbdddff', padding: 13, borderRadius: 10, alignItems: 'center', flex: 1, marginRight: 6 },
+  btnPrimaryText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
+  btnSecondary: { backgroundColor: '#0b0d12', padding: 13, borderRadius: 10, alignItems: 'center', flex: 1, marginRight: 6, borderWidth: 1, borderColor: '#1e293b' },
+  btnSecondaryText: { color: '#9ca3af', fontSize: 14, fontWeight: 'bold' },
+  btnDanger: { backgroundColor: '#ef444422', padding: 13, borderRadius: 10, alignItems: 'center', width: 48 },
+  btnDangerText: { fontSize: 16 },
+  coordDisplay: { backgroundColor: '#0b0d12', borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#1e293b' },
+  coordText: { color: '#34c3f3ff', fontSize: 13, fontWeight: 'bold' },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  clearLink: { color: '#ef4444', fontSize: 12, fontWeight: 'bold' },
+  emptyText: { color: '#9ca3af', fontSize: 13 },
+  historyItem: { backgroundColor: '#0b0d12', borderRadius: 8, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', borderWidth: 1, borderColor: '#1e293b' },
+  historyLeft: { flex: 1, marginRight: 8 },
+  historyLabel: { color: '#0ea5e9', fontSize: 11, fontWeight: 'bold', marginBottom: 3 },
+  historyValue: { color: '#ffffff', fontSize: 13 },
+  historyTime: { color: '#9ca3af', fontSize: 11 },
 });

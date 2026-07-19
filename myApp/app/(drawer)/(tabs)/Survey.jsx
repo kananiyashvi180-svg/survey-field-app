@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, Pressable, ScrollView, View, Text, Alert } from 'react-native';
+import { StyleSheet, TextInput, Pressable, ScrollView, View, Text, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export const surveyStore = [];
@@ -17,9 +17,9 @@ export default function SurveyScreen() {
 
   const getTodayDateString = () => {
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
     return dd + '/' + mm + '/' + yyyy;
   };
 
@@ -30,66 +30,61 @@ export default function SurveyScreen() {
     priority: 'Medium',
     date: getTodayDateString(),
   });
-
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const validateForm = () => {
     const tempErrors = {};
     let isValid = true;
-
-    if (!form.siteName.trim()) {
-      tempErrors.siteName = 'Site Name is required';
-      isValid = false;
-    }
-    if (!form.clientName.trim()) {
-      tempErrors.clientName = 'Client Name is required';
-      isValid = false;
-    }
-
+    if (!form.siteName.trim()) { tempErrors.siteName = 'Site Name is required'; isValid = false; }
+    if (!form.clientName.trim()) { tempErrors.clientName = 'Client Name is required'; isValid = false; }
     setErrors(tempErrors);
     return isValid;
   };
 
   const handleSubmit = () => {
     if (!validateForm()) return;
-
-    const newSurvey = {
-      id: generateId(),
-      siteName: form.siteName.trim(),
-      clientName: form.clientName.trim(),
-      description: form.description.trim() || 'No description provided.',
-      priority: form.priority,
-      date: form.date,
-      status: 'Submitted',
-      submittedAt: new Date().toLocaleString(),
-      notes: '',
-      photo: null,
-      contact: { name: '', number: '' },
-      location: null,
-    };
-
-    surveyStore.unshift(newSurvey);
-
-    Alert.alert('Success', 'Survey for ' + form.siteName.trim() + ' has been created.');
-
-    setForm({
-      siteName: '',
-      clientName: '',
-      description: '',
-      priority: 'Medium',
-      date: getTodayDateString(),
-    });
-    setErrors({});
-
-    router.navigate('/History');
+    setSubmitting(true);
+    setTimeout(() => {
+      const newSurvey = {
+        id: generateId(),
+        siteName: form.siteName.trim(),
+        clientName: form.clientName.trim(),
+        description: form.description.trim() || 'No description provided.',
+        priority: form.priority,
+        date: form.date,
+        status: 'Submitted',
+        submittedAt: new Date().toLocaleString(),
+        notes: '',
+        photo: null,
+        contact: { name: '', number: '' },
+        location: null,
+      };
+      surveyStore.unshift(newSurvey);
+      setSubmitting(false);
+      Alert.alert('✅ Survey Created', 'Survey for ' + form.siteName.trim() + ' has been saved.');
+      setForm({ siteName: '', clientName: '', description: '', priority: 'Medium', date: getTodayDateString() });
+      setErrors({});
+      router.navigate('/History');
+    }, 400);
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.sectionHeaderTitle}>Survey Information</Text>
+      {/* Header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageIcon}>📝</Text>
+        <View>
+          <Text style={styles.pageTitle}>Create Survey</Text>
+          <Text style={styles.pageSubtitle}>Fill in the field survey details below</Text>
+        </View>
+      </View>
 
-        <Text style={styles.label}>Site Name *</Text>
+      {/* Survey Information Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>📋 Survey Information</Text>
+
+        <Text style={styles.fieldLabel}>Site Name *</Text>
         <TextInput
           style={styles.input}
           placeholder="e.g. Metro Station Construction"
@@ -99,7 +94,7 @@ export default function SurveyScreen() {
         />
         {errors.siteName ? <Text style={styles.errorText}>{errors.siteName}</Text> : null}
 
-        <Text style={styles.label}>Client Name *</Text>
+        <Text style={styles.fieldLabel}>Client Name *</Text>
         <TextInput
           style={styles.input}
           placeholder="e.g. Infrastructure Dept"
@@ -109,7 +104,7 @@ export default function SurveyScreen() {
         />
         {errors.clientName ? <Text style={styles.errorText}>{errors.clientName}</Text> : null}
 
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.fieldLabel}>Description</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Provide a brief description of the site survey..."
@@ -119,8 +114,11 @@ export default function SurveyScreen() {
           multiline
           numberOfLines={3}
         />
+      </View>
 
-        <Text style={styles.label}>Priority Level</Text>
+      {/* Priority Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>⚡ Priority Level</Text>
         <View style={styles.priorityRow}>
           {['Low', 'Medium', 'High'].map((level) => (
             <Pressable
@@ -128,27 +126,34 @@ export default function SurveyScreen() {
               style={form.priority === level ? styles.chipSelected : styles.chip}
               onPress={() => setForm({ ...form, priority: level })}
             >
-              <Text style={styles.chipText}>{level}</Text>
+              <Text style={form.priority === level ? styles.chipTextSelected : styles.chipText}>{level}</Text>
             </Pressable>
           ))}
         </View>
+      </View>
 
-        <Text style={styles.label}>Survey Date</Text>
+      {/* Date Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>📅 Survey Date</Text>
         <TextInput
           style={styles.input}
           value={form.date}
           onChangeText={(val) => setForm({ ...form, date: val })}
+          placeholder="DD/MM/YYYY"
+          placeholderTextColor="#4b5563"
         />
       </View>
 
-      <Text style={styles.sectionTitle}>Attach Site Artifacts</Text>
-
+      {/* Action Buttons */}
       <View style={styles.btnRow}>
         <Pressable style={styles.btnSecondary} onPress={() => router.navigate('/Dashboard')}>
-          <Text style={styles.btnText}>Cancel</Text>
+          <Text style={styles.btnSecondaryText}>Cancel</Text>
         </Pressable>
-        <Pressable style={styles.btn} onPress={handleSubmit}>
-          <Text style={styles.btnText}>Create Survey</Text>
+        <Pressable style={styles.btnPrimary} onPress={handleSubmit} disabled={submitting}>
+          {submitting
+            ? <ActivityIndicator size="small" color="#ffffff" />
+            : <Text style={styles.btnPrimaryText}>Create Survey</Text>
+          }
         </Pressable>
       </View>
     </ScrollView>
@@ -162,31 +167,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  pageIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  pageTitle: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  pageSubtitle: {
+    color: '#9ca3af',
+    fontSize: 13,
+    marginTop: 2,
+  },
   card: {
     backgroundColor: '#151821',
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
-  sectionHeaderTitle: {
-    color: '#ffffff',
-    fontSize: 18,
+  cardLabel: {
+    color: '#0ea5e9',
+    fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 16,
-    paddingLeft: 4,
-  },
-  label: {
+  fieldLabel: {
     color: '#9ca3af',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginTop: 14,
     marginBottom: 6,
+    marginTop: 12,
   },
   input: {
     backgroundColor: '#0b0d12',
@@ -194,60 +211,43 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#1e293b',
   },
   textArea: {
     minHeight: 80,
+    textAlignVertical: 'top',
   },
   priorityRow: {
     flexDirection: 'row',
     marginTop: 4,
-    marginBottom: 8,
   },
   chip: {
-    backgroundColor: '#1c1f2b',
-    paddingVertical: 12,
+    backgroundColor: '#0b0d12',
+    paddingVertical: 10,
     borderRadius: 8,
     marginRight: 8,
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1e293b',
   },
   chipSelected: {
     backgroundColor: '#f97316',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     marginRight: 8,
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#f97316',
   },
   chipText: {
-    color: '#ffffff',
+    color: '#9ca3af',
     fontSize: 14,
     fontWeight: 'bold',
   },
-  btnRow: {
-    flexDirection: 'row',
-    marginVertical: 20,
-    marginBottom: 40,
-  },
-  btn: {
-    backgroundColor: '#f97316',
-    padding: 14,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnSecondary: {
-    backgroundColor: '#374151',
-    padding: 14,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnText: {
+  chipTextSelected: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: 'bold',
@@ -256,5 +256,38 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 12,
     marginTop: 4,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    marginVertical: 20,
+    marginBottom: 40,
+  },
+  btnPrimary: {
+    backgroundColor: '#f97316',
+    padding: 14,
+    marginLeft: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    flex: 1,
+  },
+  btnPrimaryText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  btnSecondary: {
+    backgroundColor: '#151821',
+    padding: 14,
+    marginRight: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  btnSecondaryText: {
+    color: '#9ca3af',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
