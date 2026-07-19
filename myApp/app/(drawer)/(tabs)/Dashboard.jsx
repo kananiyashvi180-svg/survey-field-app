@@ -28,9 +28,8 @@ export default function Dashboard() {
       label: 'New Survey',
       desc: 'Fill survey details',
       icon: '📝',
-      bg: '#1e293b',
-      iconBg: '#0ea5e922',
-      iconColor: '#0ea5e9',
+      iconBg: '#38bdf822',
+      iconColor: '#38bdf8',
       route: '/Survey'
     },
     {
@@ -38,7 +37,6 @@ export default function Dashboard() {
       label: 'Camera Access',
       desc: 'Capture site photos',
       icon: '📷',
-      bg: '#1e293b',
       iconBg: '#22c55e22',
       iconColor: '#22c55e',
       route: '/Camera'
@@ -48,9 +46,8 @@ export default function Dashboard() {
       label: 'Location GPS',
       desc: 'Pinpoint locations',
       icon: '📍',
-      bg: '#1e293b',
-      iconBg: '#eab30822',
-      iconColor: '#eab308',
+      iconBg: '#f9731622',
+      iconColor: '#f97316',
       route: '/Location'
     },
     {
@@ -58,7 +55,6 @@ export default function Dashboard() {
       label: 'Contacts Sync',
       desc: 'Link client contacts',
       icon: '👥',
-      bg: '#1e293b',
       iconBg: '#a855f722',
       iconColor: '#a855f7',
       route: '/Contacts'
@@ -68,7 +64,6 @@ export default function Dashboard() {
       label: 'Clipboard',
       desc: 'Manage copied data',
       icon: '📋',
-      bg: '#1e293b',
       iconBg: '#06b6d422',
       iconColor: '#06b6d4',
       route: '/Clipboard'
@@ -78,7 +73,6 @@ export default function Dashboard() {
       label: 'Preview',
       desc: 'View active survey',
       icon: '👁️',
-      bg: '#1e293b',
       iconBg: '#ec489922',
       iconColor: '#ec4899',
       route: '/Preview'
@@ -121,8 +115,10 @@ export default function Dashboard() {
                   <View style={[styles.iconBox, { backgroundColor: action.iconBg }]}>
                     <Text style={[styles.icon, { color: action.iconColor }]}>{action.icon}</Text>
                   </View>
-                  <Text style={styles.actionLabel}>{action.label}</Text>
-                  <Text style={styles.actionDesc}>{action.desc}</Text>
+                  <View style={styles.actionTextContainer}>
+                    <Text style={styles.actionLabel}>{action.label}</Text>
+                    <Text style={styles.actionDesc}>{action.desc}</Text>
+                  </View>
                 </Pressable>
 
                 {nextAction ? (
@@ -133,8 +129,10 @@ export default function Dashboard() {
                     <View style={[styles.iconBox, { backgroundColor: nextAction.iconBg }]}>
                       <Text style={[styles.icon, { color: nextAction.iconColor }]}>{nextAction.icon}</Text>
                     </View>
-                    <Text style={styles.actionLabel}>{nextAction.label}</Text>
-                    <Text style={styles.actionDesc}>{nextAction.desc}</Text>
+                    <View style={styles.actionTextContainer}>
+                      <Text style={styles.actionLabel}>{nextAction.label}</Text>
+                      <Text style={styles.actionDesc}>{nextAction.desc}</Text>
+                    </View>
                   </Pressable>
                 ) : (
                   <View style={[styles.actionCard, { backgroundColor: 'transparent' }]} />
@@ -227,26 +225,31 @@ const styles = StyleSheet.create({
     padding: 16,
     flex: 1,
     marginHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   iconBox: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 10,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 18,
+  },
+  actionTextContainer: {
+    flex: 1,
   },
   actionLabel: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   actionDesc: {
     color: '#9ca3af',
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 2,
   },
 });
